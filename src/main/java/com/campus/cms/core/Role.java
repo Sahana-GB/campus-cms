@@ -1,5 +1,4 @@
 package com.campus.cms.core;
-
 /**
  * The three user roles. The names must match the values allowed by the
  * CHECK constraint on users.role in db/schema.sql.
