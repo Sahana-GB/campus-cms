@@ -1,0 +1,7 @@
+# Keep shell scripts as LF even on Windows. Without this, Git for Windows can
+# convert them to CRLF and Bash fails with "\r: command not found".
+* text=auto
+*.sh  text eol=lf
+*.sql text eol=lf
+*.png binary
+*.pdf binary
