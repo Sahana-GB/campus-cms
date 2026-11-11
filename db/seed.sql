@@ -40,10 +40,11 @@ INSERT INTO students (student_id, user_id, roll_number, name, branch, year, emai
     (5, 8, 'EC2402', 'Divya Nair',  'ECE', 3, 'divya@campus.edu', 'ACTIVE');
 
 -- ---------- COURSES ----------
-INSERT INTO courses (course_id, code, title, credits, capacity, semester, faculty_id, status) VALUES
-    (1, 'CS101', 'Intro to Programming', 4, 60, 'Fall 2026', 1, 'ACTIVE'),
-    (2, 'CS201', 'Data Structures',      3, 50, 'Fall 2026', 2, 'ACTIVE'),
-    (3, 'CS301', 'Databases',            3,  3, 'Fall 2026', 1, 'ACTIVE');
+INSERT INTO courses (course_id, code, title, credits, capacity, semester, slot, faculty_id, status) VALUES
+    (1, 'CS101', 'Intro to Programming', 4, 60, 'Fall 2026', 'B', 1, 'ACTIVE'),
+    (2, 'CS201', 'Data Structures',      3, 50, 'Fall 2026', 'C', 2, 'ACTIVE'),
+    (3, 'CS301', 'Databases',            3,  3, 'Fall 2026', 'D', 1, 'ACTIVE');
+-- Every course has its own slot (B, C, D), so none of them clash.
 -- CS301 has capacity 3 on purpose, so you can demo the "Course is full" error.
 
 -- ---------- ENROLLMENTS (student_id, course_id, status) ----------

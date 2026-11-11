@@ -2,6 +2,8 @@
 -- Campus Course Management System: schema.sql
 -- Database: SQLite
 -- Scope: single semester (no timetable, no prerequisites)
+-- Each course has a SLOT (A, B, C...). Two ACTIVE courses can never share a slot,
+-- so courses can never clash in time.
 -- Safe to re-run: drops and recreates every table.
 -- ============================================================
 
@@ -63,6 +65,7 @@ CREATE TABLE faculty (
 -- faculty_id may be NULL until the admin assigns a faculty member.
 -- "Seats left" is computed: capacity - count of APPROVED enrollments.
 -- ARCHIVED courses must not accept new enrollments (check in Java).
+-- slot is just a label (A, B, C, ...). It is NOT tied to real clock times.
 -- ------------------------------------------------------------
 CREATE TABLE courses (
     course_id  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,10 +74,17 @@ CREATE TABLE courses (
     credits    INTEGER NOT NULL CHECK (credits > 0),
     capacity   INTEGER NOT NULL CHECK (capacity > 0),
     semester   TEXT    NOT NULL,
+    slot       TEXT    NOT NULL CHECK (length(slot) > 0 AND slot = UPPER(TRIM(slot))),
     faculty_id INTEGER,
     status     TEXT    NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'ARCHIVED')),
     FOREIGN KEY (faculty_id) REFERENCES faculty(faculty_id)
 );
+
+-- RULE: no two ACTIVE courses may share the same slot.
+-- (Partial unique index: archived courses do not block a slot, so an admin
+--  can archive an old course and reuse its slot for a new one.)
+CREATE UNIQUE INDEX idx_courses_unique_active_slot
+    ON courses(slot) WHERE status = 'ACTIVE';
 
 -- ------------------------------------------------------------
 -- ENROLLMENTS
