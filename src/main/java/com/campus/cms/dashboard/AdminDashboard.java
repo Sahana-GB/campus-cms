@@ -7,6 +7,8 @@ import com.campus.cms.core.DashboardCard;
 import com.campus.cms.core.Session;
 import com.campus.cms.students.Student;
 import com.campus.cms.students.StudentDAO;
+import com.campus.cms.enrollment.AdminEnrollmentsPanel;
+import com.campus.cms.enrollment.EnrollmentService;
 import com.campus.cms.students.StudentsPanel;
 
 import javax.swing.*;
@@ -97,6 +99,8 @@ public class AdminDashboard extends JFrame {
         // Navigation Buttons
         overviewNavBtn = createNavButton("Overview");
         studentsNavBtn = createNavButton("Student Management");
+        var enrollmentsNavBtn = createNavButton("Enrollments");
+        enrollmentsNavBtn.addActionListener(e -> showCard("enrollments"));
         profileNavBtn = createNavButton("My Profile");
         logoutNavBtn = createNavButton("Logout");
 
@@ -118,6 +122,8 @@ public class AdminDashboard extends JFrame {
         sidebar.add(Box.createVerticalStrut(8));
         sidebar.add(studentsNavBtn);
         sidebar.add(Box.createVerticalStrut(8));
+        sidebar.add(enrollmentsNavBtn);
+        sidebar.add(Box.createVerticalStrut(8));
         sidebar.add(profileNavBtn);
         sidebar.add(Box.createVerticalGlue());
         sidebar.add(logoutNavBtn);
@@ -135,6 +141,7 @@ public class AdminDashboard extends JFrame {
         // Card 2: Student Management
         studentsPanel = new StudentsPanel(studentDAO);
         contentPanel.add(studentsPanel, CARD_STUDENTS);
+        contentPanel.add(new AdminEnrollmentsPanel(new EnrollmentService()), "enrollments");
 
         // Card 3: Profile
         profilePanel = new ProfilePanel(authService, session);

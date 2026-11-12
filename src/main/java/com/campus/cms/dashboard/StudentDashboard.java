@@ -3,6 +3,10 @@ package com.campus.cms.dashboard;
 import com.campus.cms.auth.AuthService;
 import com.campus.cms.auth.LoginFrame;
 import com.campus.cms.auth.ProfilePanel;
+import com.campus.cms.enrollment.BrowsePanel;
+import com.campus.cms.enrollment.EnrollmentService;
+import com.campus.cms.enrollment.StudentCoursesPanel;
+import com.campus.cms.enrollment.TimetablePanel;
 import com.campus.cms.auth.User;
 import com.campus.cms.core.DashboardCard;
 import com.campus.cms.core.Role;
@@ -151,11 +155,13 @@ public class StudentDashboard extends JFrame {
         contentPanel.add(overviewCard, CARD_OVERVIEW);
 
         // Card 2: My Courses (Person C module placeholder)
-        JPanel coursesCard = createPlaceholderPanel(
-                "My Enrolled Courses",
-                "Course catalog browsing, active enrollments, course schedules, and class timetables will be available once the Course & Enrollment module (Person C) is integrated.",
-                "Course Module Integration (Person C)"
-        );
+        javax.swing.JTabbedPane coursesTabs = new javax.swing.JTabbedPane();
+        EnrollmentService enrollmentService = new EnrollmentService();
+        coursesTabs.addTab("Browse Courses", new BrowsePanel(enrollmentService));
+        coursesTabs.addTab("My Courses", new StudentCoursesPanel(enrollmentService));
+        coursesTabs.addTab("Timetable", new TimetablePanel(enrollmentService));
+        JPanel coursesCard = new JPanel(new BorderLayout());
+        coursesCard.add(coursesTabs, BorderLayout.CENTER);
         contentPanel.add(coursesCard, CARD_COURSES);
 
         // Card 3: Assignments & Grades (Person D module placeholder)

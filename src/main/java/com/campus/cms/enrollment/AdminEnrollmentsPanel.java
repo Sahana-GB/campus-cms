@@ -74,9 +74,9 @@ public class AdminEnrollmentsPanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
 
-        refresh();
         courseBox.addActionListener(e -> loadTable());
         statusBox.addActionListener(e -> loadTable());
+        UiUtil.refreshWhenShown(this, this::refresh);
     }
 
     /** Reload the course list and the table. Call this whenever the screen is shown. */
