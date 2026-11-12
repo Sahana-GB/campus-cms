@@ -22,16 +22,14 @@ public class BrowsePanel extends JPanel {
             {"Code", "Title", "Faculty", "Credits", "Slot", "Seats left", "My status"};
 
     private final EnrollmentService service;
-    private final int studentId;
     private final SimpleTableModel model = new SimpleTableModel(COLUMNS);
     private final JTable table = new JTable(model);
     private final TableRowSorter<SimpleTableModel> sorter = new TableRowSorter<>(model);
     private final JTextField searchField = new JTextField(22);
     private List<BrowseRow> rows = List.of();
 
-    public BrowsePanel(EnrollmentService service, int studentId) {
+    public BrowsePanel(EnrollmentService service) {
         this.service = service;
-        this.studentId = studentId;
 
         setLayout(new BorderLayout(8, 8));
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -58,20 +56,20 @@ public class BrowsePanel extends JPanel {
         add(bottom, BorderLayout.SOUTH);
 
         UiUtil.onChange(searchField, () -> UiUtil.setSearch(sorter, searchField.getText()));
-        refresh();
+        UiUtil.refreshWhenShown(this, this::refresh);
     }
 
     /** Reload from the database. Call this whenever the screen is shown. */
     public void refresh() {
         try {
-            rows = service.browseCourses(studentId);
+            rows = service.browseCourses(service.myStudentId());
             List<Object[]> data = new ArrayList<>();
             for (BrowseRow r : rows) {
                 data.add(new Object[]{r.code(), r.title(), r.facultyName(), r.credits(), r.slot(),
                         r.seatsLeft(), r.myStatus() == null ? "" : r.myStatus()});
             }
             model.setRows(data);
-        } catch (EnrollmentException e) {
+        } catch (EnrollmentException | IllegalStateException e) {
             UiUtil.error(this, e.getMessage());
         }
     }
@@ -84,9 +82,9 @@ public class BrowsePanel extends JPanel {
         }
         BrowseRow course = rows.get(table.convertRowIndexToModel(viewRow));
         try {
-            service.requestEnrollment(studentId, course.courseId());
+            service.requestEnrollment(service.myStudentId(), course.courseId());
             UiUtil.info(this, "Request sent for " + course.code() + ".\nStatus: PENDING (waiting for admin approval).");
-        } catch (EnrollmentException e) {
+        } catch (EnrollmentException | IllegalStateException e) {
             UiUtil.error(this, e.getMessage());
         }
         refresh();

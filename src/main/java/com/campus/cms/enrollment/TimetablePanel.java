@@ -17,12 +17,10 @@ public class TimetablePanel extends JPanel {
     private static final String[] COLUMNS = {"Slot", "Code", "Title", "Faculty"};
 
     private final EnrollmentService service;
-    private final int studentId;
     private final SimpleTableModel model = new SimpleTableModel(COLUMNS);
 
-    public TimetablePanel(EnrollmentService service, int studentId) {
+    public TimetablePanel(EnrollmentService service) {
         this.service = service;
-        this.studentId = studentId;
 
         setLayout(new BorderLayout(8, 8));
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -34,17 +32,17 @@ public class TimetablePanel extends JPanel {
         add(new JLabel("My courses by slot (two courses never share a slot, so there are no clashes)"),
                 BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
-        refresh();
+        UiUtil.refreshWhenShown(this, this::refresh);
     }
 
     public void refresh() {
         try {
             List<Object[]> data = new ArrayList<>();
-            for (Enrollment e : service.myTimetable(studentId)) {
+            for (Enrollment e : service.myTimetable(service.myStudentId())) {
                 data.add(new Object[]{e.getSlot(), e.getCourseCode(), e.getCourseTitle(), e.getFacultyName()});
             }
             model.setRows(data);
-        } catch (EnrollmentException e) {
+        } catch (EnrollmentException | IllegalStateException e) {
             UiUtil.error(this, e.getMessage());
         }
     }

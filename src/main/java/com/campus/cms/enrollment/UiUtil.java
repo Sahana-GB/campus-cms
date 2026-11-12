@@ -1,5 +1,6 @@
 package com.campus.cms.enrollment;
 
+import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.RowFilter;
 import javax.swing.event.DocumentEvent;
@@ -7,6 +8,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.JTextComponent;
 import java.awt.Component;
+import java.awt.event.HierarchyEvent;
 import java.util.regex.Pattern;
 
 /** Small helpers shared by the enrollment panels. */
@@ -28,6 +30,15 @@ final class UiUtil {
         } else {
             sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text.trim())));
         }
+    }
+
+    /** Runs the refresh every time the panel becomes visible (menu click, tab switch). Nothing runs at construction. */
+    static void refreshWhenShown(JComponent panel, Runnable refresh) {
+        panel.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && panel.isShowing()) {
+                refresh.run();
+            }
+        });
     }
 
     static void error(Component parent, String message) {
