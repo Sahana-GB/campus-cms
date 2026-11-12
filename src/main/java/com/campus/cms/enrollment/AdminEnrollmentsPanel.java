@@ -30,6 +30,7 @@ public class AdminEnrollmentsPanel extends JPanel {
     private final SimpleTableModel model = new SimpleTableModel(COLUMNS);
     private final JTable table = new JTable(model);
     private final JComboBox<CourseOption> courseBox = new JComboBox<>();
+    private final JButton periodButton = new JButton();
     private final JComboBox<String> statusBox = new JComboBox<>(
             new String[]{ALL_STATUS, "PENDING", "APPROVED", "REJECTED", "DROPPED", "COMPLETED"});
     private List<Enrollment> rows = List.of();
@@ -54,6 +55,8 @@ public class AdminEnrollmentsPanel extends JPanel {
         JButton refresh = new JButton("Refresh");
         refresh.addActionListener(e -> refresh());
         filters.add(refresh);
+        periodButton.addActionListener(e -> togglePeriod());
+        filters.add(periodButton);
 
         JButton approve = new JButton("Approve");
         approve.addActionListener(e -> approveSelected());
@@ -81,6 +84,7 @@ public class AdminEnrollmentsPanel extends JPanel {
 
     /** Reload the course list and the table. Call this whenever the screen is shown. */
     public void refresh() {
+        updatePeriodButton();
         loading = true;
         try {
             CourseOption previous = (CourseOption) courseBox.getSelectedItem();
@@ -187,5 +191,29 @@ public class AdminEnrollmentsPanel extends JPanel {
             EnrollmentService.AllocationResult result = service.autoAllocate(courseId);
             UiUtil.info(this, result.approved() + " approved, " + result.stillPending() + " still pending.");
         });
+    }
+
+    private void updatePeriodButton() {
+        try {
+            periodButton.setText(service.isEnrollmentOpen()
+                    ? "Enrollment: OPEN (click to close)" : "Enrollment: CLOSED (click to open)");
+        } catch (EnrollmentException e) {
+            UiUtil.error(this, e.getMessage());
+        }
+    }
+
+    private void togglePeriod() {
+        try {
+            boolean open = service.isEnrollmentOpen();
+            String question = open
+                    ? "Close enrollment? Students will not be able to request courses."
+                    : "Open enrollment? Students will be able to request courses.";
+            if (UiUtil.confirm(this, question)) {
+                service.setEnrollmentOpen(!open);
+            }
+        } catch (EnrollmentException e) {
+            UiUtil.error(this, e.getMessage());
+        }
+        updatePeriodButton();
     }
 }

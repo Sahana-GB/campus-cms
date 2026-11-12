@@ -1,6 +1,7 @@
--- Starting point for profiling (Person A + Person C). Do NOT apply before profiling/before.txt is recorded.
+-- Added AFTER profiling/before.txt was recorded (Person A + Person C).
 -- UNIQUE (student_id, course_id) and UNIQUE (assignment_id, student_id) already give automatic indexes
 -- that cover lookups by student_id and by assignment_id, so only the gaps are listed here.
+-- Keep the index names in sync with INDEX_NAMES in python/profile_queries.py.
 
 -- Seats left, approvals, rosters, "enrollments of one course with a status"
 CREATE INDEX IF NOT EXISTS idx_enrollments_course_status ON enrollments(course_id, status);
@@ -11,5 +12,9 @@ CREATE INDEX IF NOT EXISTS idx_enrollments_status ON enrollments(status);
 -- CGPA and "my grades": all grades of one student
 CREATE INDEX IF NOT EXISTS idx_grades_student ON grades(student_id);
 
--- Student search by name on the admin Students screen
-CREATE INDEX IF NOT EXISTS idx_students_name ON students(name);
+-- Grade averages / transcript reports join assignments by course
+CREATE INDEX IF NOT EXISTS idx_assignments_course ON assignments(course_id);
+
+-- Student search by name. NOCASE lets SQLite use it for  name LIKE 'abc%'  (prefix search).
+-- A "contains" search (LIKE '%abc%') can never use any index.
+CREATE INDEX IF NOT EXISTS idx_students_name ON students(name COLLATE NOCASE);

@@ -3,6 +3,7 @@ package com.campus.cms.enrollment;
 import com.campus.cms.core.Database;
 import com.campus.cms.core.Role;
 import com.campus.cms.core.Session;
+import com.campus.cms.core.Settings;
 import com.campus.cms.auth.User;
 import com.campus.cms.enrollment.EnrollmentDAO.BrowseRow;
 import com.campus.cms.enrollment.EnrollmentDAO.CourseInfo;
@@ -77,6 +78,10 @@ public class EnrollmentService {
     public String requestEnrollment(int studentId, int courseId) throws EnrollmentException {
         requireStudent(studentId);
         try (Connection c = factory.open()) {
+            if (!Settings.isEnrollmentOpen(c)) {
+                throw new EnrollmentException(
+                        "Enrollment is closed right now. Please try again when the admin opens the enrollment period.");
+            }
             if (!"ACTIVE".equals(dao.studentStatus(c, studentId))) {
                 throw new EnrollmentException("Your account is not active.");
             }
@@ -390,5 +395,52 @@ public class EnrollmentService {
 
     private static EnrollmentException wrap(SQLException e) {
         return new EnrollmentException("Database error: " + e.getMessage(), e);
+    }
+
+    // ============================================================ enrollment period
+
+    /** Anyone logged in may ask whether students can currently request courses. */
+    public boolean isEnrollmentOpen() throws EnrollmentException {
+        try (Connection c = factory.open()) {
+            return Settings.isEnrollmentOpen(c);
+        } catch (SQLException e) {
+            throw wrap(e);
+        }
+    }
+
+    /** Admin opens or closes the enrollment period. */
+    public void setEnrollmentOpen(boolean open) throws EnrollmentException {
+        requireAdmin();
+        try (Connection c = factory.open()) {
+            Settings.setEnrollmentOpen(c, open);
+        } catch (SQLException e) {
+            throw wrap(e);
+        }
+    }
+
+    // ============================================================ grade reports
+
+    /** Admin report: per course, students graded and the average / highest / lowest percentage. */
+    public ReportTable gradeAveragesReport() throws EnrollmentException {
+        requireAdmin();
+        try (Connection c = factory.open()) {
+            return dao.gradeAveragesReport(c);
+        } catch (SQLException e) {
+            throw wrap(e);
+        }
+    }
+
+    /** Transcript from PUBLISHED grades. A student sees only their own; an admin can see any. */
+    public ReportTable studentTranscriptReport(int studentId) throws EnrollmentException {
+        if (currentRole() != Role.ADMIN) {
+            requireStudent(studentId);
+        }
+        try (Connection c = factory.open()) {
+            ReportTable t = dao.studentTranscriptReport(c, studentId);
+            double cgpa = cgpaCalculator.compute(c, studentId);
+            return new ReportTable("Student transcript (CGPA " + cgpa + ")", t.headers(), t.rows());
+        } catch (SQLException e) {
+            throw wrap(e);
+        }
     }
 }
