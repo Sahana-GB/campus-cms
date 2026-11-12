@@ -3,12 +3,15 @@ package com.campus.cms.enrollment;
 import com.campus.cms.core.Database;
 import com.campus.cms.core.Role;
 import com.campus.cms.core.Session;
+import com.campus.cms.auth.User;
 import com.campus.cms.enrollment.EnrollmentDAO.BrowseRow;
 import com.campus.cms.enrollment.EnrollmentDAO.CourseInfo;
 import com.campus.cms.enrollment.EnrollmentDAO.CourseOption;
 import com.campus.cms.reports.ReportTable;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,15 +40,36 @@ public class EnrollmentService {
         this.factory = factory;
     }
 
-    // ---- The only two lines that depend on Person A's Session. Change them if its API differs. ----
+    // ---- The only methods that depend on Person A's Session. ----
     protected Role currentRole() {
-        return Session.getRole();
+        return Session.getInstance().getRole();
     }
 
+    /** The students.student_id of the logged-in student. The session only knows the user id. */
     protected int currentStudentId() {
-        return Session.getStudentId();
+        User user = Session.getInstance().getCurrentUser();
+        if (user == null) {
+            throw new IllegalStateException("Nobody is logged in.");
+        }
+        try (Connection c = factory.open();
+             PreparedStatement ps = c.prepareStatement("SELECT student_id FROM students WHERE user_id = ?")) {
+            ps.setInt(1, user.getUserId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not look up the student record.", e);
+        }
+        throw new IllegalStateException("This user is not a student.");
     }
-    // -------------------------------------------------------------------------------------------------
+
+    /** For the screens: the logged-in student's id, to pass into the student panels. */
+    public int myStudentId() {
+        return currentStudentId();
+    }
+    // ----------------------------------------------------------------
 
     // =========================================================== student actions
 
