@@ -1,4 +1,7 @@
 package com.campus.cms.core;
+
+import java.util.Locale;
+
 /**
  * The three user roles. The names must match the values allowed by the
  * CHECK constraint on users.role in db/schema.sql.
@@ -14,7 +17,7 @@ public enum Role {
             throw new IllegalArgumentException("Role is null");
         }
         try {
-            return Role.valueOf(text.trim().toUpperCase());
+            return Role.valueOf(text.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unknown role: " + text);
         }
