@@ -3,6 +3,7 @@ package com.campus.cms.dashboard;
 import com.campus.cms.auth.AuthService;
 import com.campus.cms.auth.LoginFrame;
 import com.campus.cms.auth.ProfilePanel;
+import com.campus.cms.enrollment.EnrollmentException;
 import com.campus.cms.enrollment.BrowsePanel;
 import com.campus.cms.enrollment.EnrollmentService;
 import com.campus.cms.enrollment.StudentCoursesPanel;
@@ -153,6 +154,12 @@ public class StudentDashboard extends JFrame {
         // Card 1: Overview
         JPanel overviewCard = createOverviewPanel();
         contentPanel.add(overviewCard, CARD_OVERVIEW);
+        overviewCard.addHierarchyListener(ev -> {
+            if ((ev.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
+                    && overviewCard.isShowing()) {
+                refreshEnrollmentMetrics();
+            }
+        });
 
         // Card 2: My Courses (Person C module placeholder)
         javax.swing.JTabbedPane coursesTabs = new javax.swing.JTabbedPane();
@@ -367,6 +374,20 @@ public class StudentDashboard extends JFrame {
 
     public Student getCurrentStudent() {
         return currentStudent;
+    }
+
+    /** Fills the Enrolled Courses card from the database. Keeps the placeholder if nobody is logged in as a student. */
+    public void refreshEnrollmentMetrics() {
+        try {
+            EnrollmentService enrollment = new EnrollmentService();
+            int me = enrollment.myStudentId();
+            int approved = enrollment.countMine(me, "APPROVED");
+            int pending = enrollment.countMine(me, "PENDING");
+            enrolledCoursesCard.setValue(approved);
+            enrolledCoursesCard.setSubtitle(pending == 0 ? "No pending requests" : pending + " pending request(s)");
+        } catch (EnrollmentException | IllegalStateException e) {
+            // no student session or a database problem: leave the card as it is
+        }
     }
 
     public DashboardCard getEnrolledCoursesCard() {
