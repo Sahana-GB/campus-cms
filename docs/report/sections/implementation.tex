@@ -1,0 +1,62 @@
+% Person C: Enrollment and Reporting (implementation, usage and results)
+\section{Enrollment and Reporting}
+
+\subsection{Overview}
+The enrollment module lets a student request courses, lets the administrator approve or reject the
+requests, and lets both sides see the results. It is split into the same layers as the rest of the
+project: \texttt{EnrollmentDAO} holds all SQL, \texttt{EnrollmentService} holds the rules and the role
+checks, and the Swing panels (\texttt{BrowsePanel}, \texttt{StudentCoursesPanel}, \texttt{TimetablePanel},
+\texttt{AdminEnrollmentsPanel}) only display data and call the service.
+
+\subsection{Enrollment life cycle}
+A request starts as \texttt{PENDING}. The administrator moves it to \texttt{APPROVED} or
+\texttt{REJECTED}. A student can drop a course, which sets \texttt{DROPPED} (the row is kept for history).
+Requesting the course again re-opens the old row, which respects the rule that a student cannot enroll in
+the same course twice (\texttt{UNIQUE (student\_id, course\_id)}).
+
+\subsection{Rules enforced}
+\begin{itemize}
+  \item Only an active student can request a course, and only an active (not archived) course accepts requests.
+  \item Duplicate requests are rejected.
+  \item The administrator can open or close the \emph{enrollment period}. While it is closed, students
+        cannot request courses; approvals and drops still work. The setting is stored in a small
+        \texttt{settings} table created on first use, so \texttt{schema.sql} did not change.
+  \item Capacity is checked when a request is approved, so the number of approved students never exceeds
+        the course capacity.
+  \item Students see and change only their own enrollments; every service method checks the role first.
+\end{itemize}
+
+\subsection{Capacity and CGPA-based allocation}
+When more students request a course than it has seats, the administrator can run automatic allocation.
+Pending students are ranked by CGPA (highest first, ties broken by roll number) and approved until the
+course is full. The remaining requests stay pending. The CGPA is computed by \texttt{CgpaCalculator} from
+published grades, using the course credits and the assignment weights. Until grades are published, every
+CGPA is $0.0$, so allocation falls back to the tie-break order.
+
+\subsection{Timetable clashes and prerequisites}
+Our final schema is for a single semester and gives every course a \emph{slot}. A partial unique index
+allows only one active course per slot, so two active courses can never clash in time. Because of this
+rule, no separate clash check is needed in the enrollment code, and the schema has no prerequisite table.
+
+\subsection{Reports and CSV export}
+The service provides four reports for the administrator: enrollment counts per course, course roster,
+grade averages per course, and student transcript (percentage and letter grade per course, with the CGPA
+in the title). Only \emph{published} grades are used. \texttt{CsvExporter} writes any report table to a CSV
+file. The same reports are available from the command line through \texttt{python/reports.py}, which can
+also draw a grade-average chart and a bell curve for one course.
+
+\subsection{Usage}
+\begin{enumerate}
+  \item Run \texttt{bash scripts/setup.sh} to create the database, then \texttt{bash scripts/run.sh}.
+  \item As administrator, open \emph{Enrollments} and use the \emph{Enrollment: OPEN/CLOSED} button.
+  \item As a student, open \emph{Browse Courses}, search, and press \emph{Enroll}. A clear message is shown
+        for errors such as a full course or a closed enrollment period.
+  \item As administrator, filter pending requests by course and approve or reject them, or run the allocation.
+  \item Students see their courses under \emph{My Courses} and the weekly grid under \emph{Timetable}.
+\end{enumerate}
+
+\subsection{Results}
+The module is covered by 22 JUnit tests (\texttt{EnrollmentServiceTest}, \texttt{CsvExporterTest} and
+\texttt{EnrollmentPeriodAndReportsTest}); the whole project passes 109 tests. The profiling results for
+the enrollment queries on a database of 10{,}006 students and 50{,}040 enrollments are given in the
+profiling section.
