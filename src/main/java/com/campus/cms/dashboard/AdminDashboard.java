@@ -115,6 +115,8 @@ public class AdminDashboard extends JFrame {
         overviewNavBtn = sidebar.addNav(new JButton("Overview"));
         studentsNavBtn = sidebar.addNav(new JButton("Student Management"));
         enrollmentsNavBtn = sidebar.addNav(new JButton("Enrollment Management"));
+        facultyNavBtn = sidebar.addNav(new JButton("Faculty Management"));
+        coursesNavBtn = sidebar.addNav(new JButton("Course Management"));
         profileNavBtn = sidebar.addNav(new JButton("My Profile"));
         logoutNavBtn = sidebar.setFooter(new JButton("Logout"));
 
@@ -145,20 +147,6 @@ public class AdminDashboard extends JFrame {
             profilePanel.refreshProfile();
         });
         logoutNavBtn.addActionListener(e -> handleLogout());
-
-        sidebar.add(overviewNavBtn);
-        sidebar.add(Box.createVerticalStrut(10));
-        sidebar.add(studentsNavBtn);
-        sidebar.add(Box.createVerticalStrut(10));
-        sidebar.add(enrollmentsNavBtn);
-        sidebar.add(Box.createVerticalStrut(10));
-        sidebar.add(facultyNavBtn);
-        sidebar.add(Box.createVerticalStrut(10));
-        sidebar.add(coursesNavBtn);
-        sidebar.add(Box.createVerticalStrut(10));
-        sidebar.add(profileNavBtn);
-        sidebar.add(Box.createVerticalGlue());
-        sidebar.add(logoutNavBtn);
 
         add(sidebar, BorderLayout.WEST);
 
@@ -249,20 +237,19 @@ public class AdminDashboard extends JFrame {
             }
         });
 
-        JButton gotoProfileBtn = Styles.secondary(new JButton("View My Profile \u2192"));
-        JButton gotoFacultyBtn = new JButton("Manage Faculty \u2192");
+        JButton gotoFacultyBtn = Styles.secondary(new JButton("Manage Faculty \u2192"));
         gotoFacultyBtn.addActionListener(e -> {
             showCard(CARD_FACULTY);
             facultyPanel.refresh();
         });
 
-        JButton gotoCoursesBtn = new JButton("Manage Courses \u2192");
+        JButton gotoCoursesBtn = Styles.secondary(new JButton("Manage Courses \u2192"));
         gotoCoursesBtn.addActionListener(e -> {
             showCard(CARD_COURSES);
             coursesPanel.refresh();
         });
 
-        JButton gotoProfileBtn = new JButton("View My Profile \u2192");
+        JButton gotoProfileBtn = Styles.secondary(new JButton("View My Profile \u2192"));
         gotoProfileBtn.addActionListener(e -> {
             showCard(CARD_PROFILE);
             profilePanel.refreshProfile();
@@ -326,6 +313,8 @@ public class AdminDashboard extends JFrame {
             sidebar.setActive(switch (cardName) {
                 case CARD_STUDENTS -> studentsNavBtn;
                 case CARD_ENROLLMENTS -> enrollmentsNavBtn;
+                case CARD_FACULTY -> facultyNavBtn;
+                case CARD_COURSES -> coursesNavBtn;
                 case CARD_PROFILE -> profileNavBtn;
                 default -> overviewNavBtn;
             });

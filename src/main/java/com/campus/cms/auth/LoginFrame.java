@@ -152,6 +152,10 @@ public class LoginFrame extends JFrame {
             new com.campus.cms.dashboard.AdminDashboard().setVisible(true);
             return;
         }
+        if (role == Role.FACULTY) {
+            new com.campus.cms.dashboard.FacultyDashboard().setVisible(true);
+            return;
+        }
         if (role == Role.STUDENT) {
             new com.campus.cms.dashboard.StudentDashboard().setVisible(true);
             return;
