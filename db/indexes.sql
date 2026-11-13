@@ -1,7 +1,4 @@
--- Added AFTER profiling/before.txt was recorded (Person A + Person C).
--- UNIQUE (student_id, course_id) and UNIQUE (assignment_id, student_id) already give automatic indexes
--- that cover lookups by student_id and by assignment_id, so only the gaps are listed here.
--- Keep the index names in sync with INDEX_NAMES in python/profile_queries.py.
+
 
 -- Seats left, approvals, rosters, "enrollments of one course with a status"
 CREATE INDEX IF NOT EXISTS idx_enrollments_course_status ON enrollments(course_id, status);
