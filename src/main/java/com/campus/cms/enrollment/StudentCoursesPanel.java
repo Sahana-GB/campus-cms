@@ -17,14 +17,12 @@ public class StudentCoursesPanel extends JPanel {
     private static final String[] COLUMNS = {"Code", "Title", "Slot", "Faculty", "Status", "Requested on"};
 
     private final EnrollmentService service;
-    private final int studentId;
     private final SimpleTableModel model = new SimpleTableModel(COLUMNS);
     private final JTable table = new JTable(model);
     private List<Enrollment> rows = List.of();
 
-    public StudentCoursesPanel(EnrollmentService service, int studentId) {
+    public StudentCoursesPanel(EnrollmentService service) {
         this.service = service;
-        this.studentId = studentId;
 
         setLayout(new BorderLayout(8, 8));
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -44,19 +42,19 @@ public class StudentCoursesPanel extends JPanel {
 
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
-        refresh();
+        UiUtil.refreshWhenShown(this, this::refresh);
     }
 
     public void refresh() {
         try {
-            rows = service.myEnrollments(studentId);
+            rows = service.myEnrollments(service.myStudentId());
             List<Object[]> data = new ArrayList<>();
             for (Enrollment e : rows) {
                 data.add(new Object[]{e.getCourseCode(), e.getCourseTitle(), e.getSlot(),
                         e.getFacultyName(), e.getStatus(), e.getRequestDate()});
             }
             model.setRows(data);
-        } catch (EnrollmentException e) {
+        } catch (EnrollmentException | IllegalStateException e) {
             UiUtil.error(this, e.getMessage());
         }
     }
@@ -73,7 +71,7 @@ public class StudentCoursesPanel extends JPanel {
         }
         try {
             service.drop(e.getEnrollmentId());
-        } catch (EnrollmentException ex) {
+        } catch (EnrollmentException | IllegalStateException ex) {
             UiUtil.error(this, ex.getMessage());
         }
         refresh();

@@ -75,6 +75,10 @@ class AdminDashboardTest {
         dashboard.getStudentsNavBtn().doClick();
         assertNotNull(dashboard.getStudentsPanel());
 
+        // Click Enrollment Management
+        dashboard.getEnrollmentsNavBtn().doClick();
+        assertNotNull(dashboard.getAdminEnrollmentsPanel());
+
         // Click My Profile
         dashboard.getProfileNavBtn().doClick();
         assertNotNull(dashboard.getProfilePanel());
@@ -198,5 +202,19 @@ class AdminDashboardTest {
         dashboard.handleLogout();
 
         assertFalse(dashboard.getLogoutNavBtn().isEnabled());
+    }
+
+    @Test
+    void enrollmentManagementNavigationSwitchesToAdminEnrollmentsPanel() {
+        AdminDashboard dashboard = new AdminDashboard(stubDAO, authService, session);
+
+        assertNotNull(dashboard.getEnrollmentsNavBtn());
+        assertEquals("Enrollment Management", dashboard.getEnrollmentsNavBtn().getText());
+        assertNotNull(dashboard.getAdminEnrollmentsPanel());
+
+        dashboard.getEnrollmentsNavBtn().doClick();
+        assertNotNull(dashboard.getContentPanel());
+
+        dashboard.dispose();
     }
 }

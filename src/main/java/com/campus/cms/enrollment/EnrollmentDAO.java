@@ -109,6 +109,36 @@ public class EnrollmentDAO {
             + "FROM enrollments e JOIN students s ON s.student_id = e.student_id "
             + "WHERE e.course_id = ? AND e.status = 'APPROVED' ORDER BY s.roll_number";
 
+    private static final String COURSE_PCT =
+            "CASE WHEN SUM(a.weight) > 0 "
+            + "THEN SUM(g.marks * 1.0 / a.max_marks * a.weight) / SUM(a.weight) * 100.0 "
+            + "ELSE AVG(g.marks * 1.0 / a.max_marks) * 100.0 END";
+
+    static final String REPORT_GRADE_AVERAGES_SQL =
+            "SELECT code AS \"Code\", title AS \"Title\", COUNT(*) AS \"Students graded\", "
+            + "ROUND(AVG(pct), 2) AS \"Average\", ROUND(MAX(pct), 2) AS \"Highest\", "
+            + "ROUND(MIN(pct), 2) AS \"Lowest\" "
+            + "FROM (SELECT co.course_id, co.code, co.title, g.student_id, " + COURSE_PCT + " AS pct "
+            + "      FROM grades g "
+            + "      JOIN assignments a ON a.assignment_id = g.assignment_id "
+            + "      JOIN courses co ON co.course_id = a.course_id "
+            + "      WHERE g.published = 1 "
+            + "      GROUP BY co.course_id, g.student_id) "
+            + "GROUP BY course_id ORDER BY code";
+
+    static final String REPORT_TRANSCRIPT_SQL =
+            "SELECT code AS \"Code\", title AS \"Title\", credits AS \"Credits\", "
+            + "ROUND(pct, 2) AS \"Percentage\", "
+            + "CASE WHEN pct >= 90 THEN 'A' WHEN pct >= 80 THEN 'B' WHEN pct >= 70 THEN 'C' "
+            + "     WHEN pct >= 60 THEN 'D' WHEN pct >= 50 THEN 'E' ELSE 'F' END AS \"Letter grade\" "
+            + "FROM (SELECT co.code, co.title, co.credits, " + COURSE_PCT + " AS pct "
+            + "      FROM grades g "
+            + "      JOIN assignments a ON a.assignment_id = g.assignment_id "
+            + "      JOIN courses co ON co.course_id = a.course_id "
+            + "      WHERE g.student_id = ? AND g.published = 1 "
+            + "      GROUP BY co.course_id) "
+            + "ORDER BY code";
+
     static final String REPORT_HISTORY_SQL =
             "SELECT c.code AS \"Code\", c.title AS \"Title\", c.credits AS \"Credits\", "
             + "c.slot AS \"Slot\", e.status AS \"Status\", e.request_date AS \"Requested on\" "
@@ -332,5 +362,21 @@ public class EnrollmentDAO {
         String faculty = rs.getString("faculty_name");
         e.setFacultyName(faculty == null ? "(not assigned)" : faculty);
         return e;
+    }
+
+    public ReportTable gradeAveragesReport(Connection c) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement(REPORT_GRADE_AVERAGES_SQL);
+             ResultSet rs = ps.executeQuery()) {
+            return ReportTable.from("Grade averages per course (published grades, percent)", rs);
+        }
+    }
+
+    public ReportTable studentTranscriptReport(Connection c, int studentId) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement(REPORT_TRANSCRIPT_SQL)) {
+            ps.setInt(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return ReportTable.from("Student transcript", rs);
+            }
+        }
     }
 }

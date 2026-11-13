@@ -11,6 +11,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ public class AdminEnrollmentsPanel extends JPanel {
     private final SimpleTableModel model = new SimpleTableModel(COLUMNS);
     private final JTable table = new JTable(model);
     private final JComboBox<CourseOption> courseBox = new JComboBox<>();
+    private final JButton periodButton = new JButton();
     private final JComboBox<String> statusBox = new JComboBox<>(
             new String[]{ALL_STATUS, "PENDING", "APPROVED", "REJECTED", "DROPPED", "COMPLETED"});
     private List<Enrollment> rows = List.of();
@@ -39,21 +41,28 @@ public class AdminEnrollmentsPanel extends JPanel {
         this.service = service;
 
         setLayout(new BorderLayout(8, 8));
-        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
 
         table.setAutoCreateRowSorter(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
         statusBox.setSelectedItem("PENDING");
 
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        courseBox.setPreferredSize(new Dimension(courseBox.getPreferredSize().width, 28));
+        statusBox.setPreferredSize(new Dimension(130, 28));
+
+        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
         filters.add(new JLabel("Course:"));
         filters.add(courseBox);
         filters.add(new JLabel("Status:"));
         filters.add(statusBox);
         JButton refresh = new JButton("Refresh");
+        refresh.setPreferredSize(new Dimension(refresh.getPreferredSize().width, 28));
         refresh.addActionListener(e -> refresh());
         filters.add(refresh);
+        periodButton.setPreferredSize(new Dimension(periodButton.getPreferredSize().width, 28));
+        periodButton.addActionListener(e -> togglePeriod());
+        filters.add(periodButton);
 
         JButton approve = new JButton("Approve");
         approve.addActionListener(e -> approveSelected());
@@ -74,13 +83,14 @@ public class AdminEnrollmentsPanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
 
-        refresh();
         courseBox.addActionListener(e -> loadTable());
         statusBox.addActionListener(e -> loadTable());
+        UiUtil.refreshWhenShown(this, this::refresh);
     }
 
     /** Reload the course list and the table. Call this whenever the screen is shown. */
     public void refresh() {
+        updatePeriodButton();
         loading = true;
         try {
             CourseOption previous = (CourseOption) courseBox.getSelectedItem();
@@ -187,5 +197,29 @@ public class AdminEnrollmentsPanel extends JPanel {
             EnrollmentService.AllocationResult result = service.autoAllocate(courseId);
             UiUtil.info(this, result.approved() + " approved, " + result.stillPending() + " still pending.");
         });
+    }
+
+    private void updatePeriodButton() {
+        try {
+            periodButton.setText(service.isEnrollmentOpen()
+                    ? "Enrollment: OPEN (click to close)" : "Enrollment: CLOSED (click to open)");
+        } catch (EnrollmentException e) {
+            UiUtil.error(this, e.getMessage());
+        }
+    }
+
+    private void togglePeriod() {
+        try {
+            boolean open = service.isEnrollmentOpen();
+            String question = open
+                    ? "Close enrollment? Students will not be able to request courses."
+                    : "Open enrollment? Students will be able to request courses.";
+            if (UiUtil.confirm(this, question)) {
+                service.setEnrollmentOpen(!open);
+            }
+        } catch (EnrollmentException e) {
+            UiUtil.error(this, e.getMessage());
+        }
+        updatePeriodButton();
     }
 }
