@@ -1,8 +1,13 @@
 package com.campus.cms.enrollment;
 
+import com.campus.cms.core.ui.FilterBar;
+import com.campus.cms.core.ui.PageHeader;
+import com.campus.cms.core.ui.StatusBadge;
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
 import com.campus.cms.enrollment.EnrollmentDAO.CourseOption;
 
-import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -11,6 +16,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
@@ -40,47 +46,58 @@ public class AdminEnrollmentsPanel extends JPanel {
     public AdminEnrollmentsPanel(EnrollmentService service) {
         this.service = service;
 
-        setLayout(new BorderLayout(8, 8));
-        setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
+        setLayout(new BorderLayout(0, Theme.SPACE_MD));
+        setBorder(Styles.pagePadding());
 
-        table.setAutoCreateRowSorter(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setFillsViewportHeight(true);
+        Styles.table(table);
+        table.getColumnModel().getColumn(4).setCellRenderer(new StatusBadge.Renderer());
         statusBox.setSelectedItem("PENDING");
 
-        courseBox.setPreferredSize(new Dimension(courseBox.getPreferredSize().width, 28));
-        statusBox.setPreferredSize(new Dimension(130, 28));
+        Styles.input(courseBox, 240);
+        Styles.input(statusBox, 150);
 
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
-        filters.add(new JLabel("Course:"));
-        filters.add(courseBox);
-        filters.add(new JLabel("Status:"));
-        filters.add(statusBox);
-        JButton refresh = new JButton("Refresh");
-        refresh.setPreferredSize(new Dimension(refresh.getPreferredSize().width, 28));
+        FilterBar filters = new FilterBar();
+        filters.addLabeled("COURSE", courseBox);
+        filters.addLabeled("STATUS", statusBox);
+        JButton refresh = Styles.secondary(new JButton("Refresh"));
         refresh.addActionListener(e -> refresh());
         filters.add(refresh);
-        periodButton.setPreferredSize(new Dimension(periodButton.getPreferredSize().width, 28));
+        Styles.secondary(periodButton);
         periodButton.addActionListener(e -> togglePeriod());
         filters.add(periodButton);
 
-        JButton approve = new JButton("Approve");
+        JButton approve = Styles.primary(new JButton("Approve"));
         approve.addActionListener(e -> approveSelected());
-        JButton reject = new JButton("Reject");
+        JButton reject = Styles.secondary(new JButton("Reject"));
         reject.addActionListener(e -> rejectSelected());
-        JButton remove = new JButton("Remove");
+        JButton remove = Styles.destructive(new JButton("Remove"));
         remove.addActionListener(e -> removeSelected());
-        JButton allocate = new JButton("Auto-allocate by CGPA");
+        JButton allocate = Styles.secondary(new JButton("Auto-allocate by CGPA"));
         allocate.addActionListener(e -> autoAllocate());
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, Theme.SPACE_SM, 0));
+        buttons.setOpaque(false);
         buttons.add(approve);
         buttons.add(reject);
         buttons.add(remove);
         buttons.add(allocate);
-        buttons.add(new JLabel("Pick one course and PENDING to see CGPA and auto-allocate."));
+        JLabel hint = new JLabel("Pick one course and PENDING to see CGPA and auto-allocate.");
+        hint.setFont(Theme.SMALL);
+        hint.setForeground(Theme.TEXT_MUTED);
+        buttons.add(hint);
 
-        add(filters, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JPanel top = new JPanel();
+        top.setOpaque(false);
+        top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
+        PageHeader header = new PageHeader("Enrollment Management",
+                "Review requests, approve seats and control the enrollment period.");
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
+        filters.setAlignmentX(Component.LEFT_ALIGNMENT);
+        top.add(header);
+        top.add(filters);
+
+        add(top, BorderLayout.NORTH);
+        add(Styles.scroll(table), BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
 
         courseBox.addActionListener(e -> loadTable());

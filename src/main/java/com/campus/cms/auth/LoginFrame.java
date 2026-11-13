@@ -2,6 +2,8 @@ package com.campus.cms.auth;
 
 import com.campus.cms.core.Role;
 import com.campus.cms.core.Session;
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -33,32 +35,37 @@ public class LoginFrame extends JFrame {
     private void initUI() {
         setTitle("Campus CMS - Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(420, 340);
+        setSize(440, 410);
         setLocationRelativeTo(null);
         setResizable(false);
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBorder(new EmptyBorder(25, 30, 25, 30));
+        mainPanel.setBackground(Theme.SURFACE);
+        mainPanel.setBorder(new EmptyBorder(28, 36, 28, 36));
 
         // Header Title
         JLabel titleLabel = new JLabel("Campus Course Management");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+        titleLabel.setFont(new Font(Theme.FONT_FAMILY, Font.BOLD, 20));
+        titleLabel.setForeground(Theme.PRIMARY);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel subtitleLabel = new JLabel("Please enter your credentials to sign in");
-        subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        subtitleLabel.setForeground(Color.GRAY);
+        subtitleLabel.setFont(Theme.SMALL);
+        subtitleLabel.setForeground(Theme.TEXT_MUTED);
         subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Form Fields
         JPanel formPanel = new JPanel(new GridLayout(4, 1, 4, 4));
+        formPanel.setOpaque(false);
         formPanel.setBorder(new EmptyBorder(15, 0, 10, 0));
 
         JLabel userLabel = new JLabel("Username:");
         usernameField = new JTextField();
+        Styles.input(usernameField, 240);
         JLabel passLabel = new JLabel("Password:");
         passwordField = new JPasswordField();
+        Styles.input(passwordField, 240);
 
         formPanel.add(userLabel);
         formPanel.add(usernameField);
@@ -67,14 +74,13 @@ public class LoginFrame extends JFrame {
 
         // Error message label
         errorLabel = new JLabel(" ");
-        errorLabel.setForeground(new Color(192, 0, 0));
+        errorLabel.setForeground(Theme.DANGER);
         errorLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Login Button
-        loginButton = new JButton("Login");
-        loginButton.setFont(new Font("SansSerif", Font.BOLD, 13));
-        loginButton.setPreferredSize(new Dimension(120, 34));
+        loginButton = Styles.primary(new JButton("Login"));
+        loginButton.setPreferredSize(new Dimension(140, Theme.CONTROL_HEIGHT + 2));
         loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         loginButton.addActionListener(e -> handleLogin());
 

@@ -1,5 +1,9 @@
 package com.campus.cms.enrollment;
 
+import com.campus.cms.core.ui.StatusBadge;
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
+
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -25,22 +29,26 @@ public class StudentCoursesPanel extends JPanel {
         this.service = service;
 
         setLayout(new BorderLayout(8, 8));
-        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        setBorder(BorderFactory.createEmptyBorder(Theme.SPACE_LG, Theme.SPACE_LG, Theme.SPACE_LG, Theme.SPACE_LG));
 
-        table.setAutoCreateRowSorter(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setFillsViewportHeight(true);
+        Styles.table(table);
+        table.getColumnModel().getColumn(4).setCellRenderer(new StatusBadge.Renderer());
 
-        JButton drop = new JButton("Drop Selected Course");
+        JButton drop = Styles.destructive(new JButton("Drop Selected Course"));
         drop.addActionListener(e -> dropSelected());
-        JButton refresh = new JButton("Refresh");
+        JButton refresh = Styles.secondary(new JButton("Refresh"));
         refresh.addActionListener(e -> refresh());
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT, Theme.SPACE_SM, Theme.SPACE_SM));
+        bottom.setOpaque(false);
         bottom.add(drop);
         bottom.add(refresh);
-        bottom.add(new JLabel("PENDING = waiting for approval, APPROVED = enrolled."));
+        JLabel hint = new JLabel("PENDING = waiting for approval, APPROVED = enrolled.");
+        hint.setFont(Theme.SMALL);
+        hint.setForeground(Theme.TEXT_MUTED);
+        bottom.add(hint);
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(Styles.scroll(table), BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
         UiUtil.refreshWhenShown(this, this::refresh);
     }

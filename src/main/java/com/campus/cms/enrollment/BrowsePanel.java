@@ -1,5 +1,7 @@
 package com.campus.cms.enrollment;
 
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
 import com.campus.cms.enrollment.EnrollmentDAO.BrowseRow;
 
 import javax.swing.BorderFactory;
@@ -32,27 +34,34 @@ public class BrowsePanel extends JPanel {
         this.service = service;
 
         setLayout(new BorderLayout(8, 8));
-        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        setBorder(BorderFactory.createEmptyBorder(Theme.SPACE_LG, Theme.SPACE_LG, Theme.SPACE_LG, Theme.SPACE_LG));
 
         table.setRowSorter(sorter);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setFillsViewportHeight(true);
+        Styles.table(table);
 
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        top.add(new JLabel("Search:"));
+        Styles.input(searchField, 260);
+        searchField.putClientProperty("JTextField.placeholderText", "Search courses...");
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, Theme.SPACE_SM, Theme.SPACE_SM));
+        top.setOpaque(false);
+        top.add(Styles.fieldLabel("SEARCH"));
         top.add(searchField);
-        JButton refresh = new JButton("Refresh");
+        JButton refresh = Styles.secondary(new JButton("Refresh"));
         refresh.addActionListener(e -> refresh());
         top.add(refresh);
 
-        JButton request = new JButton("Request Enrollment");
+        JButton request = Styles.primary(new JButton("Request Enrollment"));
         request.addActionListener(e -> requestSelected());
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT, Theme.SPACE_SM, Theme.SPACE_SM));
+        bottom.setOpaque(false);
         bottom.add(request);
-        bottom.add(new JLabel("An admin must approve your request."));
+        JLabel hint = new JLabel("An admin must approve your request.");
+        hint.setFont(Theme.SMALL);
+        hint.setForeground(Theme.TEXT_MUTED);
+        bottom.add(hint);
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(Styles.scroll(table), BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
 
         UiUtil.onChange(searchField, () -> UiUtil.setSearch(sorter, searchField.getText()));
