@@ -6,6 +6,10 @@ import com.campus.cms.auth.ProfilePanel;
 import com.campus.cms.core.DashboardCard;
 import com.campus.cms.core.Role;
 import com.campus.cms.core.Session;
+import com.campus.cms.catalog.CourseDAO;
+import com.campus.cms.catalog.CoursesPanel;
+import com.campus.cms.catalog.FacultyDAO;
+import com.campus.cms.catalog.FacultyPanel;
 import com.campus.cms.core.ui.PageHeader;
 import com.campus.cms.core.ui.SidebarNav;
 import com.campus.cms.core.ui.StatusBadge;
@@ -34,18 +38,24 @@ public class AdminDashboard extends JFrame {
     public static final String CARD_OVERVIEW = "OVERVIEW";
     public static final String CARD_STUDENTS = "STUDENTS";
     public static final String CARD_ENROLLMENTS = "ENROLLMENTS";
+    public static final String CARD_FACULTY = "FACULTY";
+    public static final String CARD_COURSES = "COURSES";
     public static final String CARD_PROFILE = "PROFILE";
 
     private final StudentDAO studentDAO;
     private final AuthService authService;
     private final Session session;
     private final EnrollmentService enrollmentService;
+    private final FacultyDAO facultyDAO;
+    private final CourseDAO courseDAO;
 
     private CardLayout cardLayout;
     private JPanel contentPanel;
 
     private StudentsPanel studentsPanel;
     private AdminEnrollmentsPanel enrollmentsPanel;
+    private FacultyPanel facultyPanel;
+    private CoursesPanel coursesPanel;
     private ProfilePanel profilePanel;
 
     private DashboardCard totalStudentsCard;
@@ -55,20 +65,27 @@ public class AdminDashboard extends JFrame {
     private JButton overviewNavBtn;
     private JButton studentsNavBtn;
     private JButton enrollmentsNavBtn;
+    private JButton facultyNavBtn;
+    private JButton coursesNavBtn;
     private JButton profileNavBtn;
     private JButton logoutNavBtn;
     private SidebarNav sidebar;
     private StatusBadge periodBadge;
 
     public AdminDashboard() {
-        this(new StudentDAO(), new AuthService(), Session.getInstance(), new EnrollmentService());
+        this(new StudentDAO(), new AuthService(), Session.getInstance(), new EnrollmentService(), new FacultyDAO(), new CourseDAO());
     }
 
     public AdminDashboard(StudentDAO studentDAO, AuthService authService, Session session) {
-        this(studentDAO, authService, session, new EnrollmentService());
+        this(studentDAO, authService, session, new EnrollmentService(), new FacultyDAO(), new CourseDAO());
     }
 
     public AdminDashboard(StudentDAO studentDAO, AuthService authService, Session session, EnrollmentService enrollmentService) {
+        this(studentDAO, authService, session, enrollmentService, new FacultyDAO(), new CourseDAO());
+    }
+
+    public AdminDashboard(StudentDAO studentDAO, AuthService authService, Session session,
+                          EnrollmentService enrollmentService, FacultyDAO facultyDAO, CourseDAO courseDAO) {
         this.session = Objects.requireNonNull(session);
         if (!this.session.hasRole(Role.ADMIN)) {
             throw new SecurityException("Unauthorized access: AdminDashboard requires an active ADMIN session.");
@@ -76,6 +93,8 @@ public class AdminDashboard extends JFrame {
         this.studentDAO = Objects.requireNonNull(studentDAO);
         this.authService = Objects.requireNonNull(authService);
         this.enrollmentService = Objects.requireNonNull(enrollmentService);
+        this.facultyDAO = Objects.requireNonNull(facultyDAO);
+        this.courseDAO = Objects.requireNonNull(courseDAO);
 
         initUI();
         refreshOverviewMetrics();
@@ -113,11 +132,33 @@ public class AdminDashboard extends JFrame {
                 enrollmentsPanel.refresh();
             }
         });
+        facultyNavBtn.addActionListener(e -> {
+            showCard(CARD_FACULTY);
+            facultyPanel.refresh();
+        });
+        coursesNavBtn.addActionListener(e -> {
+            showCard(CARD_COURSES);
+            coursesPanel.refresh();
+        });
         profileNavBtn.addActionListener(e -> {
             showCard(CARD_PROFILE);
             profilePanel.refreshProfile();
         });
         logoutNavBtn.addActionListener(e -> handleLogout());
+
+        sidebar.add(overviewNavBtn);
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(studentsNavBtn);
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(enrollmentsNavBtn);
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(facultyNavBtn);
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(coursesNavBtn);
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(profileNavBtn);
+        sidebar.add(Box.createVerticalGlue());
+        sidebar.add(logoutNavBtn);
 
         add(sidebar, BorderLayout.WEST);
 
@@ -137,7 +178,15 @@ public class AdminDashboard extends JFrame {
         enrollmentsPanel = new AdminEnrollmentsPanel(enrollmentService);
         contentPanel.add(enrollmentsPanel, CARD_ENROLLMENTS);
 
-        // Card 4: Profile
+        // Card 4: Faculty Management
+        facultyPanel = new FacultyPanel(facultyDAO);
+        contentPanel.add(facultyPanel, CARD_FACULTY);
+
+        // Card 5: Course Management
+        coursesPanel = new CoursesPanel(courseDAO, facultyDAO);
+        contentPanel.add(coursesPanel, CARD_COURSES);
+
+        // Card 6: Profile
         profilePanel = new ProfilePanel(authService, session);
         contentPanel.add(profilePanel, CARD_PROFILE);
 
@@ -184,6 +233,7 @@ public class AdminDashboard extends JFrame {
         // Quick access
         JPanel quickActions = Styles.surface(new FlowLayout(FlowLayout.LEFT, Theme.SPACE_MD, 0));
         quickActions.setAlignmentX(Component.LEFT_ALIGNMENT);
+        quickActions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 125));
 
         JButton gotoStudentsBtn = Styles.primary(new JButton("Open Student Management \u2192"));
         gotoStudentsBtn.addActionListener(e -> {
@@ -200,6 +250,19 @@ public class AdminDashboard extends JFrame {
         });
 
         JButton gotoProfileBtn = Styles.secondary(new JButton("View My Profile \u2192"));
+        JButton gotoFacultyBtn = new JButton("Manage Faculty \u2192");
+        gotoFacultyBtn.addActionListener(e -> {
+            showCard(CARD_FACULTY);
+            facultyPanel.refresh();
+        });
+
+        JButton gotoCoursesBtn = new JButton("Manage Courses \u2192");
+        gotoCoursesBtn.addActionListener(e -> {
+            showCard(CARD_COURSES);
+            coursesPanel.refresh();
+        });
+
+        JButton gotoProfileBtn = new JButton("View My Profile \u2192");
         gotoProfileBtn.addActionListener(e -> {
             showCard(CARD_PROFILE);
             profilePanel.refreshProfile();
@@ -213,6 +276,8 @@ public class AdminDashboard extends JFrame {
 
         quickActions.add(gotoStudentsBtn);
         quickActions.add(gotoEnrollmentsBtn);
+        quickActions.add(gotoFacultyBtn);
+        quickActions.add(gotoCoursesBtn);
         quickActions.add(gotoProfileBtn);
         quickActions.setMaximumSize(new Dimension(Integer.MAX_VALUE, quickActions.getPreferredSize().height));
         body.add(quickActions);
@@ -332,6 +397,22 @@ public class AdminDashboard extends JFrame {
 
     public JButton getEnrollmentsNavBtn() {
         return enrollmentsNavBtn;
+    }
+
+    public JButton getFacultyNavBtn() {
+        return facultyNavBtn;
+    }
+
+    public JButton getCoursesNavBtn() {
+        return coursesNavBtn;
+    }
+
+    public FacultyPanel getFacultyPanel() {
+        return facultyPanel;
+    }
+
+    public CoursesPanel getCoursesPanel() {
+        return coursesPanel;
     }
 
     public JButton getProfileNavBtn() {

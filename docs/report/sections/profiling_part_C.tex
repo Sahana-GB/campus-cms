@@ -1,0 +1,39 @@
+% Person C's part of the profiling section. Paste into profiling.tex after agreeing the structure with Person A.
+\subsection{Profiling the enrollment queries}
+We loaded 10{,}006 students, 43 courses, 50{,}040 enrollments and 70{,}301 grades, and timed the queries the
+application runs most (30 repetitions each, same random sample before and after). Before adding any index,
+\texttt{EXPLAIN QUERY PLAN} showed full table scans. The slowest query was \emph{Browse Courses}, at
+146\,ms, because it counts the approved enrollments of every course and each count scanned the whole
+\texttt{enrollments} table.
+
+We added five indexes in \texttt{db/indexes.sql}: \texttt{enrollments(course\_id, status)},
+\texttt{enrollments(status)}, \texttt{grades(student\_id)}, \texttt{assignments(course\_id)} and
+\texttt{students(name COLLATE NOCASE)}. Table~\ref{tab:prof} shows the effect.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|r|r|r|}
+\hline
+Query & Before (ms) & After (ms) & Speed-up \\
+\hline
+Seats taken (one course)        & 3.122   & 0.059  & 53$\times$ \\
+Admin card: count by status     & 3.442   & 0.274  & 12.6$\times$ \\
+Admin table: one course, pending & 3.717  & 0.806  & 4.6$\times$ \\
+Admin table: all pending        & 34.019  & 30.478 & 1.1$\times$ \\
+Browse courses                  & 146.494 & 1.983  & 74$\times$ \\
+CGPA of one student             & 2.512   & 0.025  & 100$\times$ \\
+Report: enrollment counts       & 63.052  & 8.785  & 7.2$\times$ \\
+Report: grade averages          & 98.840  & 99.633 & none \\
+Student search by name prefix   & 1.017   & 0.175  & 5.8$\times$ \\
+\hline
+\end{tabular}
+\caption{Average query time before and after adding indexes (SQLite, 10{,}006 students).}
+\label{tab:prof}
+\end{table}
+
+Two queries did not improve. The grade-averages report has to read every published grade, so no index can
+skip that work; it is an administrator report used rarely. The ``all pending'' list returns thousands of
+rows, so its time goes into building and sorting the result. The name index only helps prefix searches;
+a search for text in the middle of a name cannot use an index. Indexes cost a little extra time on inserts
+and extra disk space, which is acceptable for a read-heavy system. We therefore added them only after
+measuring, and \texttt{schema.sql} contains none.
