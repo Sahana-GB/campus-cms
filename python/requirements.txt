@@ -1,0 +1,8 @@
+# Campus Course Management System (CCMS) - Python Requirements
+#
+# Core data generation and profiling scripts (generate_data.py, profile_queries.py)
+# use ONLY the Python standard library (sqlite3, hashlib, secrets, argparse, etc.)
+# and do not require external packages.
+
+# Optional: Only required if using matplotlib graphing in python/reports.py (--plot flag):
+matplotlib>=3.7.0
