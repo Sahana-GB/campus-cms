@@ -22,6 +22,7 @@ class StudentsPanelTest {
         boolean findAllCalled = false;
         boolean searchCalled = false;
         boolean deactivateCalled = false;
+        boolean activateCalled = false;
         boolean createCalled = false;
         boolean updateCalled = false;
 
@@ -72,6 +73,19 @@ class StudentsPanelTest {
                 Student s = list.get(i);
                 if (s.getStudentId() == studentId) {
                     list.set(i, new Student(s.getStudentId(), s.getUserId(), s.getRollNumber(), s.getName(), s.getBranch(), s.getYear(), s.getEmail(), "INACTIVE", s.getUsername()));
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean activate(int studentId) {
+            activateCalled = true;
+            for (int i = 0; i < list.size(); i++) {
+                Student s = list.get(i);
+                if (s.getStudentId() == studentId) {
+                    list.set(i, new Student(s.getStudentId(), s.getUserId(), s.getRollNumber(), s.getName(), s.getBranch(), s.getYear(), s.getEmail(), "ACTIVE", s.getUsername()));
                     return true;
                 }
             }
@@ -167,16 +181,19 @@ class StudentsPanelTest {
         // Initially no selection
         assertFalse(panel.getEditStudentButton().isEnabled());
         assertFalse(panel.getDeactivateStudentButton().isEnabled());
+        assertFalse(panel.getReactivateStudentButton().isEnabled());
 
         // Select row 0 (Active student)
         panel.getStudentTable().setRowSelectionInterval(0, 0);
         assertTrue(panel.getEditStudentButton().isEnabled());
         assertTrue(panel.getDeactivateStudentButton().isEnabled());
+        assertFalse(panel.getReactivateStudentButton().isEnabled());
 
         // Select row 1 (Inactive student)
         panel.getStudentTable().setRowSelectionInterval(1, 1);
         assertTrue(panel.getEditStudentButton().isEnabled());
         assertFalse(panel.getDeactivateStudentButton().isEnabled()); // Inactive student cannot be deactivated again
+        assertTrue(panel.getReactivateStudentButton().isEnabled());  // Inactive student can be reactivated
     }
 
     @Test
@@ -217,5 +234,77 @@ class StudentsPanelTest {
         assertTrue(stubDAO.deactivateCalled);
         // Record at row 0 is now INACTIVE
         assertEquals("INACTIVE", panel.getTableModel().getValueAt(0, 5));
+    }
+
+    @Test
+    void reactivateStudentTriggersDAOAndRefreshesAndAppearsInActiveFilter() {
+        AtomicBoolean confirmAsked = new AtomicBoolean(false);
+
+        StudentsPanel panel = new StudentsPanel(stubDAO) {
+            @Override
+            protected int showConfirmDialog(Object message, String title, int optionType, int messageType) {
+                confirmAsked.set(true);
+                return javax.swing.JOptionPane.YES_OPTION;
+            }
+
+            @Override
+            protected void showSuccessMessage(String message) {
+                // Suppress visual dialog popup
+            }
+        };
+
+        panel.loadStudents();
+
+        // Select inactive student (row 1 - EC2401)
+        panel.getStudentTable().setRowSelectionInterval(1, 1);
+        assertTrue(panel.getReactivateStudentButton().isEnabled());
+
+        panel.handleReactivateStudent();
+
+        assertTrue(confirmAsked.get());
+        assertTrue(stubDAO.activateCalled);
+
+        // Record at row 1 is now ACTIVE
+        assertEquals("ACTIVE", panel.getTableModel().getValueAt(1, 5));
+
+        // Test status filter "Active Only" now includes both students
+        panel.getStatusFilter().setSelectedItem("Active Only");
+        panel.loadStudents();
+        assertEquals(2, panel.getTableModel().getRowCount());
+    }
+
+    @Test
+    void deactivateAndReactivateCycleUpdatesButtonsAndStatus() {
+        StudentsPanel panel = new StudentsPanel(stubDAO) {
+            @Override
+            protected int showConfirmDialog(Object message, String title, int optionType, int messageType) {
+                return javax.swing.JOptionPane.YES_OPTION;
+            }
+
+            @Override
+            protected void showSuccessMessage(String message) {
+            }
+        };
+
+        panel.loadStudents();
+
+        // 1. Initially row 0 is ACTIVE
+        panel.getStudentTable().setRowSelectionInterval(0, 0);
+        assertTrue(panel.getDeactivateStudentButton().isEnabled());
+        assertFalse(panel.getReactivateStudentButton().isEnabled());
+
+        // 2. Deactivate
+        panel.handleDeactivateStudent();
+        assertEquals("INACTIVE", panel.getTableModel().getValueAt(0, 5));
+        panel.getStudentTable().setRowSelectionInterval(0, 0);
+        assertFalse(panel.getDeactivateStudentButton().isEnabled());
+        assertTrue(panel.getReactivateStudentButton().isEnabled());
+
+        // 3. Reactivate
+        panel.handleReactivateStudent();
+        assertEquals("ACTIVE", panel.getTableModel().getValueAt(0, 5));
+        panel.getStudentTable().setRowSelectionInterval(0, 0);
+        assertTrue(panel.getDeactivateStudentButton().isEnabled());
+        assertFalse(panel.getReactivateStudentButton().isEnabled());
     }
 }

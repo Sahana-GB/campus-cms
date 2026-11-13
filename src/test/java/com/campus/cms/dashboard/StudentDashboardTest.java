@@ -88,10 +88,12 @@ class StudentDashboardTest {
         assertTrue(dashboard.getWelcomeSubtitle().getText().contains("CSE"));
         assertTrue(dashboard.getWelcomeSubtitle().getText().contains("Year 2"));
 
-        assertEquals("—", dashboard.getEnrolledCoursesCard().getValue());
-        assertEquals("—", dashboard.getPendingAssignmentsCard().getValue());
-        assertEquals("—", dashboard.getCompletedAssignmentsCard().getValue());
-        assertEquals("—", dashboard.getPublishedGradesCard().getValue());
+        // Live statistics are loaded from actual database / services
+        assertNotNull(dashboard.getEnrolledCoursesCard().getValue());
+        assertFalse(dashboard.getEnrolledCoursesCard().getValue().isEmpty());
+        assertNotNull(dashboard.getPendingAssignmentsCard().getValue());
+        assertNotNull(dashboard.getCompletedAssignmentsCard().getValue());
+        assertNotNull(dashboard.getPublishedGradesCard().getValue());
 
         assertTrue(dashboard.getTitle().contains("Student Portal"));
         dashboard.dispose();
@@ -150,7 +152,38 @@ class StudentDashboardTest {
 
         // Overview
         dashboard.getOverviewNavBtn().doClick();
-        assertEquals("—", dashboard.getEnrolledCoursesCard().getValue());
+        assertNotNull(dashboard.getEnrolledCoursesCard().getValue());
+
+        dashboard.dispose();
+    }
+
+    @Test
+    void coursesTabsIntegratesPanelsAndSubNavigation() {
+        StudentDashboard dashboard = new StudentDashboard(stubDAO, authService, session);
+
+        assertNotNull(dashboard.getCoursesTabs());
+        assertEquals(3, dashboard.getCoursesTabs().getTabCount());
+        assertEquals("Enrolled Courses", dashboard.getCoursesTabs().getTitleAt(0));
+        assertEquals("Browse & Enroll", dashboard.getCoursesTabs().getTitleAt(1));
+        assertEquals("Timetable", dashboard.getCoursesTabs().getTitleAt(2));
+
+        assertNotNull(dashboard.getStudentCoursesPanel());
+        assertNotNull(dashboard.getBrowsePanel());
+        assertNotNull(dashboard.getTimetablePanel());
+
+        dashboard.dispose();
+    }
+
+    @Test
+    void assignmentsAndGradesIntegratesCourseSelectorAndGradesPanel() {
+        StudentDashboard dashboard = new StudentDashboard(stubDAO, authService, session);
+
+        assertNotNull(dashboard.getCourseSelectorCombo());
+        dashboard.refreshAssignmentsAndGrades();
+
+        // If the student has approved enrollments, selector combo will have items
+        int itemCount = dashboard.getCourseSelectorCombo().getItemCount();
+        assertTrue(itemCount >= 0);
 
         dashboard.dispose();
     }

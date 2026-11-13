@@ -330,6 +330,61 @@ public class StudentDAO {
         }
     }
 
+    /**
+     * Reactivates an inactive student account by setting students.status = 'ACTIVE'
+     * and users.is_active = 1 in a transaction.
+     *
+     * @param studentId the primary key student ID
+     * @return true if student was found and reactivated, false if student not found
+     * @throws SQLException if a database error occurs
+     */
+    public boolean activate(int studentId) throws SQLException {
+        try (Connection con = Database.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                // Find associated user_id
+                Integer userId = null;
+                String findUserSql = "SELECT user_id FROM students WHERE student_id = ?";
+                try (PreparedStatement ps = con.prepareStatement(findUserSql)) {
+                    ps.setInt(1, studentId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            userId = rs.getInt("user_id");
+                        }
+                    }
+                }
+
+                if (userId == null) {
+                    con.rollback();
+                    return false;
+                }
+
+                // Activate student record
+                String updateStudentSql = "UPDATE students SET status = 'ACTIVE' WHERE student_id = ?";
+                try (PreparedStatement ps = con.prepareStatement(updateStudentSql)) {
+                    ps.setInt(1, studentId);
+                    ps.executeUpdate();
+                }
+
+                // Activate user record
+                String updateUserSql = "UPDATE users SET is_active = 1 WHERE user_id = ?";
+                try (PreparedStatement ps = con.prepareStatement(updateUserSql)) {
+                    ps.setInt(1, userId);
+                    ps.executeUpdate();
+                }
+
+                con.commit();
+                return true;
+
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+
     private Student mapRow(ResultSet rs) throws SQLException {
         int studentId = rs.getInt("student_id");
         int userId = rs.getInt("user_id");

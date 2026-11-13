@@ -271,6 +271,81 @@ class StudentDAOTest {
     }
 
     @Test
+    void activateSetsBothStudentAndUserActive() throws SQLException {
+        Student student = studentDAO.createStudent("act_u", "password123", "CS2409", "Activate Student", "CSE", 2, "act@campus.edu");
+
+        // First deactivate
+        assertTrue(studentDAO.deactivate(student.getStudentId()));
+        Student deact = studentDAO.findById(student.getStudentId()).orElseThrow();
+        assertEquals("INACTIVE", deact.getStatus());
+        assertFalse(userDAO.findById(student.getUserId()).orElseThrow().isActive());
+
+        // Now activate
+        boolean activated = studentDAO.activate(student.getStudentId());
+        assertTrue(activated);
+
+        // Verify student record status is ACTIVE
+        Student fetched = studentDAO.findById(student.getStudentId()).orElseThrow();
+        assertEquals("ACTIVE", fetched.getStatus());
+        assertTrue(fetched.isActive());
+
+        // Verify user account is active
+        var user = userDAO.findById(student.getUserId()).orElseThrow();
+        assertTrue(user.isActive());
+
+        // Verify student can now log in
+        assertTrue(authService.login("act_u", "password123"));
+        assertTrue(Session.getInstance().isLoggedIn());
+    }
+
+    @Test
+    void deactivateAndReactivateCycleRestoresAuthentication() throws SQLException {
+        Student student = studentDAO.createStudent("cycle_u", "password123", "CS2410", "Cycle Student", "ECE", 3, "cycle@campus.edu");
+
+        // 1. Initial active state
+        assertTrue(authService.login("cycle_u", "password123"));
+        authService.logout();
+
+        // 2. Deactivate
+        assertTrue(studentDAO.deactivate(student.getStudentId()));
+        assertFalse(authService.login("cycle_u", "password123"));
+
+        // 3. Reactivate
+        assertTrue(studentDAO.activate(student.getStudentId()));
+        assertTrue(authService.login("cycle_u", "password123"));
+    }
+
+    @Test
+    void activateNonExistentStudentReturnsFalse() throws SQLException {
+        assertFalse(studentDAO.activate(999999));
+    }
+
+    @Test
+    void activateRollsBackOnSqlFailure() throws SQLException {
+        Student student = studentDAO.createStudent("rb_u", "password123", "CS2411", "Rollback Student", "ME", 1, "rb@campus.edu");
+        assertTrue(studentDAO.deactivate(student.getStudentId()));
+
+        // Create a temporary trigger to cause failure during users table update
+        try (Connection con = Database.getConnection();
+             Statement st = con.createStatement()) {
+            st.execute("CREATE TRIGGER fail_user_update BEFORE UPDATE ON users BEGIN SELECT RAISE(ABORT, 'Simulated failure on user update'); END;");
+        }
+
+        try {
+            assertThrows(SQLException.class, () -> studentDAO.activate(student.getStudentId()));
+
+            // Verify rollback: student status must still be INACTIVE
+            Student fetched = studentDAO.findById(student.getStudentId()).orElseThrow();
+            assertEquals("INACTIVE", fetched.getStatus(), "Transaction rollback must keep student INACTIVE on failure");
+        } finally {
+            try (Connection con = Database.getConnection();
+                 Statement st = con.createStatement()) {
+                st.execute("DROP TRIGGER IF EXISTS fail_user_update;");
+            }
+        }
+    }
+
+    @Test
     void inputValidationEnforcesConstraints() {
         assertThrows(IllegalArgumentException.class, () ->
                 studentDAO.createStudent(null, "p", "R1", "Name", "CSE", 1, "e@c.edu")

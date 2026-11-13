@@ -36,6 +36,18 @@ public class GradesPanel extends JPanel {
         topPanel.add(new JLabel("Select Assignment:"));
         assignmentCombo = new JComboBox<>();
         assignmentCombo.setPreferredSize(new Dimension(250, 28));
+        assignmentCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Assignment a) {
+                    setText(a.getTitle() != null ? a.getTitle() : "Assignment #" + a.getAssignmentId());
+                } else if (value != null) {
+                    setText(value.toString());
+                }
+                return this;
+            }
+        });
         assignmentCombo.addActionListener(e -> loadGradesForSelectedAssignment());
         topPanel.add(assignmentCombo);
 
@@ -62,6 +74,12 @@ public class GradesPanel extends JPanel {
 
         gradesTable = new JTable(tableModel);
         gradesTable.setRowHeight(26);
+
+        if (!isFaculty) {
+            // Hide Student ID column in student mode
+            gradesTable.removeColumn(gradesTable.getColumn("Student ID"));
+        }
+
         add(new JScrollPane(gradesTable), BorderLayout.CENTER);
 
         // Bottom Action Bar (Faculty Only)
@@ -204,5 +222,33 @@ public class GradesPanel extends JPanel {
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    public JComboBox<Assignment> getAssignmentCombo() {
+        return assignmentCombo;
+    }
+
+    public JTable getGradesTable() {
+        return gradesTable;
+    }
+
+    public DefaultTableModel getTableModel() {
+        return tableModel;
+    }
+
+    public JLabel getStatusLabel() {
+        return statusLabel;
+    }
+
+    public JButton getSaveBtn() {
+        return saveBtn;
+    }
+
+    public JButton getPublishBtn() {
+        return publishBtn;
+    }
+
+    public void refreshGrades() {
+        loadGradesForSelectedAssignment();
     }
 }
