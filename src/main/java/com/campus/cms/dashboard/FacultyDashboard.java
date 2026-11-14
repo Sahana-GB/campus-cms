@@ -11,6 +11,12 @@ import com.campus.cms.catalog.FacultyDAO;
 import com.campus.cms.core.DashboardCard;
 import com.campus.cms.core.Role;
 import com.campus.cms.core.Session;
+import com.campus.cms.core.ui.FilterBar;
+import com.campus.cms.core.ui.PageHeader;
+import com.campus.cms.core.ui.SidebarNav;
+import com.campus.cms.core.ui.StatusBadge;
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
 import com.campus.cms.grading.Assignment;
 import com.campus.cms.grading.AssignmentDAO;
 import com.campus.cms.grading.GradesPanel;
@@ -62,6 +68,7 @@ public class FacultyDashboard extends JFrame {
     private JButton gradesNavBtn;
     private JButton profileNavBtn;
     private JButton logoutNavBtn;
+    private SidebarNav sidebar;
 
     public FacultyDashboard() {
         this(new AuthService(), Session.getInstance(), new FacultyDAO(),
@@ -121,30 +128,15 @@ public class FacultyDashboard extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        JPanel sidebar = new JPanel();
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setPreferredSize(new Dimension(220, 0));
-        sidebar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(225, 230, 235)),
-                new EmptyBorder(20, 16, 20, 16)));
+        String facultyName = currentFaculty != null ? currentFaculty.getName()
+                : session.getCurrentUser() != null ? session.getCurrentUser().getUsername() : "Faculty";
+        sidebar = new SidebarNav("Campus CMS", "Faculty Portal", facultyName);
 
-        JLabel brand = new JLabel("Campus CMS");
-        brand.setFont(new Font("SansSerif", Font.BOLD, 18));
-        brand.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel role = new JLabel("Faculty Portal");
-        role.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        role.setForeground(Color.GRAY);
-        role.setAlignmentX(Component.LEFT_ALIGNMENT);
-        sidebar.add(brand);
-        sidebar.add(Box.createVerticalStrut(4));
-        sidebar.add(role);
-        sidebar.add(Box.createVerticalStrut(24));
-
-        overviewNavBtn = createNavButton("Overview");
-        coursesNavBtn = createNavButton("My Courses");
-        gradesNavBtn = createNavButton("Assignments & Grades");
-        profileNavBtn = createNavButton("My Profile");
-        logoutNavBtn = createNavButton("Logout");
+        overviewNavBtn = sidebar.addNav(new JButton("Overview"));
+        coursesNavBtn = sidebar.addNav(new JButton("My Courses"));
+        gradesNavBtn = sidebar.addNav(new JButton("Assignments & Grades"));
+        profileNavBtn = sidebar.addNav(new JButton("My Profile"));
+        logoutNavBtn = sidebar.setFooter(new JButton("Logout"));
 
         overviewNavBtn.addActionListener(e -> {
             showCard(CARD_OVERVIEW);
@@ -164,115 +156,112 @@ public class FacultyDashboard extends JFrame {
         });
         logoutNavBtn.addActionListener(e -> handleLogout());
 
-        sidebar.add(overviewNavBtn);
-        sidebar.add(Box.createVerticalStrut(8));
-        sidebar.add(coursesNavBtn);
-        sidebar.add(Box.createVerticalStrut(8));
-        sidebar.add(gradesNavBtn);
-        sidebar.add(Box.createVerticalStrut(8));
-        sidebar.add(profileNavBtn);
-        sidebar.add(Box.createVerticalGlue());
-        sidebar.add(logoutNavBtn);
         add(sidebar, BorderLayout.WEST);
 
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
+        contentPanel.setBackground(Theme.BACKGROUND);
         contentPanel.add(createOverviewPanel(), CARD_OVERVIEW);
         contentPanel.add(createCoursesPanel(), CARD_COURSES);
         contentPanel.add(createGradesPanel(), CARD_GRADES);
         profilePanel = new ProfilePanel(authService, session);
         contentPanel.add(profilePanel, CARD_PROFILE);
         add(contentPanel, BorderLayout.CENTER);
-    }
-
-    private JButton createNavButton(String text) {
-        JButton button = new JButton(text);
-        button.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        button.setMaximumSize(new Dimension(190, 36));
-        button.setPreferredSize(new Dimension(190, 36));
-        button.setAlignmentX(Component.LEFT_ALIGNMENT);
-        button.setHorizontalAlignment(SwingConstants.LEFT);
-        button.setFocusPainted(false);
-        return button;
+        sidebar.setActive(overviewNavBtn);
     }
 
     private JPanel createOverviewPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 22));
-        panel.setBorder(new EmptyBorder(28, 30, 28, 30));
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Theme.BACKGROUND);
+        panel.setBorder(Styles.pagePadding());
 
-        JPanel heading = new JPanel();
-        heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
-        heading.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel body = new JPanel();
+        body.setOpaque(false);
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+
         String name = currentFaculty != null ? currentFaculty.getName()
                 : session.getCurrentUser() != null ? session.getCurrentUser().getUsername() : "Faculty";
-        JLabel title = new JLabel("Welcome, " + name);
-        title.setFont(new Font("SansSerif", Font.BOLD, 25));
-        JLabel subtitle = new JLabel(currentFaculty == null
+        String subtitleText = currentFaculty == null
                 ? "Your teaching workspace and course overview"
-                : currentFaculty.getDepartment() + "  |  " + safe(currentFaculty.getEmail()));
-        subtitle.setForeground(Color.GRAY);
-        heading.add(title);
-        heading.add(Box.createVerticalStrut(6));
-        heading.add(subtitle);
+                : currentFaculty.getDepartment() + "  |  " + safe(currentFaculty.getEmail());
+
+        PageHeader header = new PageHeader("Welcome, " + name, subtitleText);
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
+        body.add(header);
+
         if (facultyProfileIssue != null) {
             JLabel warning = new JLabel(facultyProfileIssue);
-            warning.setForeground(new Color(180, 70, 35));
-            warning.setFont(new Font("SansSerif", Font.PLAIN, 12));
-            heading.add(Box.createVerticalStrut(8));
-            heading.add(warning);
+            warning.setForeground(Theme.DANGER);
+            warning.setFont(Theme.SMALL);
+            warning.setAlignmentX(Component.LEFT_ALIGNMENT);
+            body.add(Box.createVerticalStrut(Theme.SPACE_SM));
+            body.add(warning);
         }
-        panel.add(heading, BorderLayout.NORTH);
 
-        JPanel metrics = new JPanel(new GridLayout(1, 3, 16, 16));
-        assignedCoursesCard = new DashboardCard("Assigned Courses", "0", "Courses assigned to you");
-        activeCoursesCard = new DashboardCard("Active Courses", "0", "Currently active courses");
-        assignmentsCard = new DashboardCard("Assignments", "0", "Across your assigned courses");
+        JPanel metrics = new JPanel(new GridLayout(1, 3, Theme.SPACE_LG, Theme.SPACE_LG));
+        metrics.setOpaque(false);
+        metrics.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        assignedCoursesCard = new DashboardCard("Assigned Courses", "0", "Courses assigned to you", Theme.INFO);
+        activeCoursesCard = new DashboardCard("Active Courses", "0", "Currently active courses", Theme.SUCCESS);
+        assignmentsCard = new DashboardCard("Assignments", "0", "Across your assigned courses", Theme.WARNING);
         metrics.add(assignedCoursesCard);
         metrics.add(activeCoursesCard);
         metrics.add(assignmentsCard);
+        metrics.setMaximumSize(new Dimension(Integer.MAX_VALUE, metrics.getPreferredSize().height));
 
-        JPanel quick = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        quick.setBorder(BorderFactory.createTitledBorder("Quick Access"));
-        JButton coursesButton = new JButton("View My Courses");
+        body.add(metrics);
+        body.add(Box.createVerticalStrut(Theme.SPACE_XL));
+
+        JLabel quickTitle = new JLabel("Quick Access");
+        quickTitle.setFont(Theme.HEADING);
+        quickTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        body.add(quickTitle);
+        body.add(Box.createVerticalStrut(Theme.SPACE_SM));
+
+        JPanel quick = Styles.actionBar();
+
+        JButton coursesButton = Styles.primary(new JButton("View My Courses \u2192"));
         coursesButton.addActionListener(e -> {
             showCard(CARD_COURSES);
             refreshCourses();
         });
-        JButton gradesButton = new JButton("Manage Assignments & Grades");
+        JButton gradesButton = Styles.secondary(new JButton("Manage Assignments & Grades \u2192"));
         gradesButton.addActionListener(e -> {
             showCard(CARD_GRADES);
             refreshGradesPanel();
         });
         quick.add(coursesButton);
         quick.add(gradesButton);
+        body.add(quick);
 
-        JPanel center = new JPanel(new BorderLayout(0, 22));
-        center.add(metrics, BorderLayout.NORTH);
-        center.add(quick, BorderLayout.CENTER);
-        panel.add(center, BorderLayout.CENTER);
+        panel.add(body, BorderLayout.NORTH);
         return panel;
     }
 
     private JPanel createCoursesPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(22, 24, 22, 24));
-        JLabel title = new JLabel("My Courses");
-        title.setFont(new Font("SansSerif", Font.BOLD, 22));
-        panel.add(title, BorderLayout.NORTH);
+        JPanel panel = new JPanel(new BorderLayout(0, Theme.SPACE_MD));
+        panel.setBackground(Theme.BACKGROUND);
+        panel.setBorder(Styles.pagePadding());
+
+        PageHeader header = new PageHeader("My Courses", "View all courses assigned to you this semester.");
+        panel.add(header, BorderLayout.NORTH);
 
         String[] columns = {"Course ID", "Code", "Course Title", "Credits", "Semester", "Slot", "Status"};
         coursesTableModel = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
         coursesTable = new JTable(coursesTableModel);
-        coursesTable.setRowHeight(27);
         coursesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        panel.add(new JScrollPane(coursesTable), BorderLayout.CENTER);
+        Styles.table(coursesTable);
+        coursesTable.getColumnModel().getColumn(6).setCellRenderer(new StatusBadge.Renderer());
+        panel.add(Styles.scroll(coursesTable), BorderLayout.CENTER);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton refresh = new JButton("Refresh");
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, Theme.SPACE_SM, 0));
+        actions.setOpaque(false);
+        JButton refresh = Styles.secondary(new JButton("Refresh"));
         refresh.addActionListener(e -> refreshCourses());
-        JButton openGrades = new JButton("Open Assignments & Grades");
+        JButton openGrades = Styles.primary(new JButton("Open Assignments & Grades"));
         openGrades.addActionListener(e -> openSelectedCourseGrades());
         actions.add(refresh);
         actions.add(openGrades);
@@ -281,16 +270,16 @@ public class FacultyDashboard extends JFrame {
     }
 
     private JPanel createGradesPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(18, 20, 18, 20));
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel title = new JLabel("Assignments & Grades");
-        title.setFont(new Font("SansSerif", Font.BOLD, 21));
-        top.add(title);
-        top.add(Box.createHorizontalStrut(16));
-        top.add(new JLabel("Course:"));
+        JPanel panel = new JPanel(new BorderLayout(0, Theme.SPACE_MD));
+        panel.setBackground(Theme.BACKGROUND);
+        panel.setBorder(Styles.pagePadding());
+
+        PageHeader header = new PageHeader("Assignments & Grades",
+                "Review assignments, enter marks, and publish grades for your students.");
+
+        FilterBar top = new FilterBar();
         gradeCourseSelector = new JComboBox<>();
-        gradeCourseSelector.setPreferredSize(new Dimension(300, 28));
+        Styles.input(gradeCourseSelector, 320);
         gradeCourseSelector.setRenderer(new DefaultListCellRenderer() {
             @Override public Component getListCellRendererComponent(JList<?> list, Object value,
                     int index, boolean selected, boolean focus) {
@@ -302,15 +291,25 @@ public class FacultyDashboard extends JFrame {
         gradeCourseSelector.addActionListener(e -> {
             if (!rebuildingCourseSelector) loadGradesForSelectedCourse();
         });
-        top.add(gradeCourseSelector);
-        JButton refresh = new JButton("Refresh");
+        top.addLabeled("COURSE", gradeCourseSelector);
+
+        JButton refresh = Styles.secondary(new JButton("Refresh"));
         refresh.addActionListener(e -> refreshGradesPanel());
         top.add(refresh);
-        panel.add(top, BorderLayout.NORTH);
+
+        JPanel north = new JPanel(new BorderLayout(0, Theme.SPACE_MD));
+        north.setOpaque(false);
+        north.add(header, BorderLayout.NORTH);
+        north.add(top, BorderLayout.CENTER);
+        panel.add(north, BorderLayout.NORTH);
 
         gradesContainer = new JPanel(new BorderLayout());
-        gradesContainer.add(new JLabel("Select one of your courses to view assignments and manage grades.",
-                SwingConstants.CENTER), BorderLayout.CENTER);
+        gradesContainer.setOpaque(false);
+        JLabel emptyMsg = new JLabel("Select one of your courses to view assignments and manage grades.",
+                SwingConstants.CENTER);
+        emptyMsg.setFont(Theme.BODY);
+        emptyMsg.setForeground(Theme.TEXT_MUTED);
+        gradesContainer.add(emptyMsg, BorderLayout.CENTER);
         panel.add(gradesContainer, BorderLayout.CENTER);
         return panel;
     }
@@ -422,9 +421,12 @@ public class FacultyDashboard extends JFrame {
         Course selected = (Course) gradeCourseSelector.getSelectedItem();
         gradesContainer.removeAll();
         if (selected == null || currentFaculty == null) {
-            gradesContainer.add(new JLabel(currentFaculty == null
+            JLabel msg = new JLabel(currentFaculty == null
                     ? "Your faculty profile is unavailable. Contact an administrator."
-                    : "No courses are currently assigned to you.", SwingConstants.CENTER), BorderLayout.CENTER);
+                    : "No courses are currently assigned to you.", SwingConstants.CENTER);
+            msg.setFont(Theme.BODY);
+            msg.setForeground(Theme.TEXT_MUTED);
+            gradesContainer.add(msg, BorderLayout.CENTER);
             currentGradesPanel = null;
         } else {
             currentGradesPanel = createGradesPanelForCourse(selected.getCourseId());
@@ -460,6 +462,14 @@ public class FacultyDashboard extends JFrame {
 
     public void showCard(String cardName) {
         cardLayout.show(contentPanel, cardName);
+        if (sidebar != null) {
+            sidebar.setActive(switch (cardName) {
+                case CARD_COURSES -> coursesNavBtn;
+                case CARD_GRADES -> gradesNavBtn;
+                case CARD_PROFILE -> profileNavBtn;
+                default -> overviewNavBtn;
+            });
+        }
     }
 
     void handleLogout() {

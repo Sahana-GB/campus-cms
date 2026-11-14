@@ -1,5 +1,11 @@
 package com.campus.cms.students;
 
+import com.campus.cms.core.ui.FilterBar;
+import com.campus.cms.core.ui.PageHeader;
+import com.campus.cms.core.ui.StatusBadge;
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -44,48 +50,32 @@ public class StudentsPanel extends JPanel {
 
     private void initUI() {
         setLayout(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(16, 20, 16, 20));
+        setBorder(Styles.pagePadding());
 
-        // ------------------ Top Header & Controls Panel ------------------
-        JPanel topPanel = new JPanel();
-        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        // ------------------ Top: header, action toolbar, filter bar ------------------
+        PageHeader header = new PageHeader("Student Management",
+                "Add, edit and manage student accounts.");
 
-        // 1. Title Row (Separated completely from action buttons)
-        JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        JLabel titleLabel = new JLabel("Student Management");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
-        titleRow.add(titleLabel);
+        // Action toolbar (separate from title and filters)
+        JPanel actionToolbar = new JPanel(new FilterBar.WrapLayout(FlowLayout.LEFT, Theme.SPACE_SM, Theme.SPACE_XS));
+        actionToolbar.setOpaque(false);
 
-        // 2. Dedicated Action Toolbar Row
-        JPanel actionToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        actionToolbar.setBorder(new EmptyBorder(8, 0, 8, 0));
-
-        addStudentButton = new JButton("Add Student");
-        addStudentButton.setFont(new Font("SansSerif", Font.BOLD, 12));
-        addStudentButton.setPreferredSize(new Dimension(addStudentButton.getPreferredSize().width, 30));
+        addStudentButton = Styles.primary(new JButton("Add Student"));
         addStudentButton.addActionListener(e -> showAddStudentDialog());
 
-        editStudentButton = new JButton("Edit Student");
-        editStudentButton.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        editStudentButton.setPreferredSize(new Dimension(editStudentButton.getPreferredSize().width, 30));
+        editStudentButton = Styles.secondary(new JButton("Edit Student"));
         editStudentButton.setEnabled(false);
         editStudentButton.addActionListener(e -> showEditStudentDialog());
 
-        deactivateStudentButton = new JButton("Deactivate Student");
-        deactivateStudentButton.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        deactivateStudentButton.setPreferredSize(new Dimension(deactivateStudentButton.getPreferredSize().width, 30));
+        deactivateStudentButton = Styles.destructive(new JButton("Deactivate Student"));
         deactivateStudentButton.setEnabled(false);
         deactivateStudentButton.addActionListener(e -> handleDeactivateStudent());
 
-        reactivateStudentButton = new JButton("Reactivate Student");
-        reactivateStudentButton.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        reactivateStudentButton.setPreferredSize(new Dimension(reactivateStudentButton.getPreferredSize().width, 30));
+        reactivateStudentButton = Styles.secondary(new JButton("Reactivate Student"));
         reactivateStudentButton.setEnabled(false);
         reactivateStudentButton.addActionListener(e -> handleReactivateStudent());
 
-        refreshButton = new JButton("Refresh");
-        refreshButton.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        refreshButton.setPreferredSize(new Dimension(refreshButton.getPreferredSize().width, 30));
+        refreshButton = Styles.secondary(new JButton("Refresh"));
         refreshButton.addActionListener(e -> loadStudents());
 
         actionToolbar.add(addStudentButton);
@@ -94,66 +84,50 @@ public class StudentsPanel extends JPanel {
         actionToolbar.add(reactivateStudentButton);
         actionToolbar.add(refreshButton);
 
-        // 3. Dedicated Filter Panel (Separate from actions and title, non-overlapping)
-        JPanel filterPanel = new JPanel();
-        filterPanel.setLayout(new BoxLayout(filterPanel, BoxLayout.Y_AXIS));
-        filterPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(225, 230, 235)),
-                new EmptyBorder(8, 2, 8, 2)
-        ));
+        // Filter bar (wraps on narrow windows so nothing is clipped)
+        FilterBar filterPanel = new FilterBar();
 
-        // Sub-Row 3a: Search & Reset
-        JPanel searchRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
-        searchField = new JTextField(18);
-        searchField.setPreferredSize(new Dimension(180, 28));
+        searchField = new JTextField();
+        Styles.input(searchField, 200);
         searchField.putClientProperty("JTextField.placeholderText", "Search name or roll number...");
         searchField.addActionListener(e -> loadStudents());
 
-        JButton searchButton = new JButton("Search");
-        searchButton.setPreferredSize(new Dimension(searchButton.getPreferredSize().width, 28));
+        JButton searchButton = Styles.primary(new JButton("Search"));
         searchButton.addActionListener(e -> loadStudents());
 
-        JButton resetButton = new JButton("Reset Filters");
-        resetButton.setPreferredSize(new Dimension(resetButton.getPreferredSize().width, 28));
-        resetButton.addActionListener(e -> resetFilters());
-
-        searchRow.add(new JLabel("Search:"));
-        searchRow.add(searchField);
-        searchRow.add(searchButton);
-        searchRow.add(Box.createHorizontalStrut(8));
-        searchRow.add(resetButton);
-
-        // Sub-Row 3b: Branch, Year, Status Dropdowns
-        JPanel dropdownRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
-
         branchFilter = new JComboBox<>(new String[]{"All Branches", "CSE", "ECE", "ME", "CIVIL"});
-        branchFilter.setPreferredSize(new Dimension(115, 28));
+        Styles.input(branchFilter, 130);
         branchFilter.addActionListener(e -> loadStudents());
 
         yearFilter = new JComboBox<>(new String[]{"All Years", "1", "2", "3", "4", "5", "6"});
-        yearFilter.setPreferredSize(new Dimension(95, 28));
+        Styles.input(yearFilter, 105);
         yearFilter.addActionListener(e -> loadStudents());
 
         statusFilter = new JComboBox<>(new String[]{"All Students", "Active Only", "Inactive Only"});
-        statusFilter.setPreferredSize(new Dimension(130, 28));
+        Styles.input(statusFilter, 140);
         statusFilter.addActionListener(e -> loadStudents());
 
-        dropdownRow.add(new JLabel("Branch:"));
-        dropdownRow.add(branchFilter);
-        dropdownRow.add(new JLabel("Year:"));
-        dropdownRow.add(yearFilter);
-        dropdownRow.add(new JLabel("Status:"));
-        dropdownRow.add(statusFilter);
+        JButton resetButton = Styles.secondary(new JButton("Reset Filters"));
+        resetButton.addActionListener(e -> resetFilters());
 
-        filterPanel.add(searchRow);
-        filterPanel.add(Box.createVerticalStrut(4));
-        filterPanel.add(dropdownRow);
+        filterPanel.addLabeled("SEARCH", searchField);
+        filterPanel.add(searchButton);
+        filterPanel.addLabeled("BRANCH", branchFilter);
+        filterPanel.addLabeled("YEAR", yearFilter);
+        filterPanel.addLabeled("STATUS", statusFilter);
+        filterPanel.add(resetButton);
 
-        topPanel.add(titleRow);
-        topPanel.add(Box.createVerticalStrut(6));
+        JPanel topPanel = new JPanel();
+        topPanel.setOpaque(false);
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
+        actionToolbar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        filterPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        topPanel.add(header);
         topPanel.add(actionToolbar);
-        topPanel.add(Box.createVerticalStrut(4));
+        topPanel.add(Box.createVerticalStrut(Theme.SPACE_MD));
         topPanel.add(filterPanel);
+        topPanel.add(Box.createVerticalStrut(Theme.SPACE_MD));
 
         add(topPanel, BorderLayout.NORTH);
 
@@ -168,15 +142,15 @@ public class StudentsPanel extends JPanel {
 
         studentTable = new JTable(tableModel);
         studentTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        studentTable.setRowHeight(26);
-        studentTable.getTableHeader().setReorderingAllowed(false);
+        Styles.table(studentTable);
+        studentTable.getColumnModel().getColumn(5).setCellRenderer(new StatusBadge.Renderer());
         studentTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 updateActionButtons();
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(studentTable);
+        JScrollPane scrollPane = Styles.scroll(studentTable);
         add(scrollPane, BorderLayout.CENTER);
 
         // ------------------ Bottom: Status bar ------------------
@@ -264,11 +238,12 @@ public class StudentsPanel extends JPanel {
 
     private void updateActionButtons() {
         int selectedRow = studentTable.getSelectedRow();
-        boolean hasSelection = selectedRow >= 0 && selectedRow < displayedStudents.size();
+        int modelRow = selectedRow >= 0 ? studentTable.convertRowIndexToModel(selectedRow) : -1;
+        boolean hasSelection = modelRow >= 0 && modelRow < displayedStudents.size();
 
         editStudentButton.setEnabled(hasSelection);
         if (hasSelection) {
-            Student selected = displayedStudents.get(selectedRow);
+            Student selected = displayedStudents.get(modelRow);
             deactivateStudentButton.setEnabled(selected.isActive());
             reactivateStudentButton.setEnabled(!selected.isActive());
         } else {
@@ -279,8 +254,9 @@ public class StudentsPanel extends JPanel {
 
     Student getSelectedStudent() {
         int selectedRow = studentTable.getSelectedRow();
-        if (selectedRow >= 0 && selectedRow < displayedStudents.size()) {
-            return displayedStudents.get(selectedRow);
+        int modelRow = selectedRow >= 0 ? studentTable.convertRowIndexToModel(selectedRow) : -1;
+        if (modelRow >= 0 && modelRow < displayedStudents.size()) {
+            return displayedStudents.get(modelRow);
         }
         return null;
     }
@@ -294,21 +270,14 @@ public class StudentsPanel extends JPanel {
         JComboBox<Integer> yearCombo = new JComboBox<>(new Integer[]{1, 2, 3, 4, 5, 6});
         JTextField emailField = new JTextField(15);
 
-        JPanel form = new JPanel(new GridLayout(7, 2, 6, 8));
-        form.add(new JLabel("Username:"));
-        form.add(usernameField);
-        form.add(new JLabel("Password:"));
-        form.add(passwordField);
-        form.add(new JLabel("Roll Number:"));
-        form.add(rollNumberField);
-        form.add(new JLabel("Full Name:"));
-        form.add(nameField);
-        form.add(new JLabel("Branch:"));
-        form.add(branchCombo);
-        form.add(new JLabel("Academic Year:"));
-        form.add(yearCombo);
-        form.add(new JLabel("Email Address:"));
-        form.add(emailField);
+        JPanel form = Styles.formPanel();
+        Styles.addFormRow(form, 0, "Username:", usernameField);
+        Styles.addFormRow(form, 1, "Password:", passwordField);
+        Styles.addFormRow(form, 2, "Roll Number:", rollNumberField);
+        Styles.addFormRow(form, 3, "Full Name:", nameField);
+        Styles.addFormRow(form, 4, "Branch:", branchCombo);
+        Styles.addFormRow(form, 5, "Academic Year:", yearCombo);
+        Styles.addFormRow(form, 6, "Email Address:", emailField);
 
         int result = showConfirmDialog(form, "Add New Student", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
@@ -352,17 +321,12 @@ public class StudentsPanel extends JPanel {
         yearCombo.setSelectedItem(selected.getYear());
         JTextField emailField = new JTextField(selected.getEmail() != null ? selected.getEmail() : "", 15);
 
-        JPanel form = new JPanel(new GridLayout(5, 2, 6, 8));
-        form.add(new JLabel("Roll Number (ID):"));
-        form.add(rollNumberField);
-        form.add(new JLabel("Full Name:"));
-        form.add(nameField);
-        form.add(new JLabel("Branch:"));
-        form.add(branchCombo);
-        form.add(new JLabel("Academic Year:"));
-        form.add(yearCombo);
-        form.add(new JLabel("Email Address:"));
-        form.add(emailField);
+        JPanel form = Styles.formPanel();
+        Styles.addFormRow(form, 0, "Roll Number (ID):", rollNumberField);
+        Styles.addFormRow(form, 1, "Full Name:", nameField);
+        Styles.addFormRow(form, 2, "Branch:", branchCombo);
+        Styles.addFormRow(form, 3, "Academic Year:", yearCombo);
+        Styles.addFormRow(form, 4, "Email Address:", emailField);
 
         int result = showConfirmDialog(form, "Edit Student - " + selected.getRollNumber(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {

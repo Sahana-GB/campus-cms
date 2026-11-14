@@ -1,5 +1,8 @@
 package com.campus.cms.grading;
 
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -29,13 +32,15 @@ public class GradesPanel extends JPanel {
 
     private void initUI() {
         setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        setOpaque(false);
+        setBorder(BorderFactory.createEmptyBorder(Theme.SPACE_LG, Theme.SPACE_LG, Theme.SPACE_LG, Theme.SPACE_LG));
 
         // Top Control Bar
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        topPanel.setOpaque(false);
         topPanel.add(new JLabel("Select Assignment:"));
         assignmentCombo = new JComboBox<>();
-        assignmentCombo.setPreferredSize(new Dimension(250, 28));
+        Styles.input(assignmentCombo, 260);
         assignmentCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -52,7 +57,7 @@ public class GradesPanel extends JPanel {
         topPanel.add(assignmentCombo);
 
         if (isFaculty) {
-            JButton newAssignBtn = new JButton("+ New Assignment");
+            JButton newAssignBtn = Styles.secondary(new JButton("+ New Assignment"));
             newAssignBtn.addActionListener(e -> showNewAssignmentDialog());
             topPanel.add(newAssignBtn);
         }
@@ -73,20 +78,20 @@ public class GradesPanel extends JPanel {
         };
 
         gradesTable = new JTable(tableModel);
-        gradesTable.setRowHeight(26);
+        Styles.table(gradesTable);
 
         if (!isFaculty) {
             // Hide Student ID column in student mode
             gradesTable.removeColumn(gradesTable.getColumn("Student ID"));
         }
 
-        add(new JScrollPane(gradesTable), BorderLayout.CENTER);
+        add(Styles.scroll(gradesTable), BorderLayout.CENTER);
 
         // Bottom Action Bar (Faculty Only)
         if (isFaculty) {
             JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
-            saveBtn = new JButton("Save Draft Marks");
-            publishBtn = new JButton("Publish Grades");
+            saveBtn = Styles.secondary(new JButton("Save Draft Marks"));
+            publishBtn = Styles.primary(new JButton("Publish Grades"));
 
             saveBtn.addActionListener(e -> saveAllGrades());
             publishBtn.addActionListener(e -> togglePublishStatus());
@@ -127,17 +132,40 @@ public class GradesPanel extends JPanel {
                 publishBtn.setText(anyPublished ? "Unpublish (Revert to Draft)" : "Publish Grades");
             }
 
+            java.util.Map<Integer, Grade> gradeMap = new java.util.LinkedHashMap<>();
             for (Grade g : grades) {
-                // Students only see their own published grades
-                if (!isFaculty && (g.getStudentId() != currentUserId || g.getPublished() == 0)) {
-                    continue;
+                gradeMap.put(g.getStudentId(), g);
+            }
+
+            if (isFaculty) {
+                List<Integer> enrolled = gradeService.getEnrolledStudentIds(courseId);
+                for (int studentId : enrolled) {
+                    Grade g = gradeMap.remove(studentId);
+                    tableModel.addRow(new Object[]{
+                            studentId,
+                            g != null ? g.getMarks() : 0.0,
+                            selected.getMaxMarks(),
+                            g != null && g.getFeedback() != null ? g.getFeedback() : ""
+                    });
                 }
-                tableModel.addRow(new Object[]{
-                        g.getStudentId(),
-                        g.getMarks(),
-                        selected.getMaxMarks(),
-                        g.getFeedback() != null ? g.getFeedback() : ""
-                });
+                for (Grade g : gradeMap.values()) {
+                    tableModel.addRow(new Object[]{
+                            g.getStudentId(),
+                            g.getMarks(),
+                            selected.getMaxMarks(),
+                            g.getFeedback() != null ? g.getFeedback() : ""
+                    });
+                }
+            } else {
+                Grade g = gradeMap.get(currentUserId);
+                if (g != null && g.getPublished() == 1) {
+                    tableModel.addRow(new Object[]{
+                            g.getStudentId(),
+                            g.getMarks(),
+                            selected.getMaxMarks(),
+                            g.getFeedback() != null ? g.getFeedback() : ""
+                    });
+                }
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error loading grades: " + ex.getMessage(),
@@ -155,8 +183,11 @@ public class GradesPanel extends JPanel {
         try {
             for (int row = 0; row < tableModel.getRowCount(); row++) {
                 int studentId = Integer.parseInt(tableModel.getValueAt(row, 0).toString());
-                double marks = Double.parseDouble(tableModel.getValueAt(row, 1).toString());
-                String feedback = tableModel.getValueAt(row, 3).toString();
+                Object marksVal = tableModel.getValueAt(row, 1);
+                double marks = marksVal != null && !marksVal.toString().isBlank()
+                        ? Double.parseDouble(marksVal.toString().trim()) : 0.0;
+                Object feedbackVal = tableModel.getValueAt(row, 3);
+                String feedback = feedbackVal != null ? feedbackVal.toString() : "";
 
                 Grade grade = new Grade(0, selected.getAssignmentId(), studentId, marks, feedback, 0);
                 gradeService.saveOrUpdateGrade(grade);

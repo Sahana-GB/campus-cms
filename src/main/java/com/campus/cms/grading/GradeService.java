@@ -28,4 +28,8 @@ public class GradeService {
         }
         return false;
     }
+
+    public List<Integer> getEnrolledStudentIds(int courseId) {
+        return gradeDAO.getEnrolledStudentIds(courseId);
+    }
 }
