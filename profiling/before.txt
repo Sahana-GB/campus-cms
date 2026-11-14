@@ -1,0 +1,69 @@
+rows: {'students': 10006, 'courses': 43, 'enrollments': 50040, 'assignments': 84, 'grades': 70301}
+indexes present: ['idx_courses_unique_active_slot']
+repeats per query: 30
+
+query                                       avg ms    min ms    max ms
+----------------------------------------------------------------------
+seats taken (one course)                     3.122     1.889     5.164
+admin card: count by status                  3.442     2.787     7.222
+admin table: one course + PENDING            3.717     1.888     6.130
+admin table: all PENDING                    34.019    25.144    56.607
+student: my enrollments                      0.051     0.024     0.272
+student: browse courses                    146.494   133.720   191.344
+CGPA: grades of one student                  2.512     2.086     4.856
+report: enrollment counts                   63.052    53.057   100.627
+report: grade averages                      98.840    87.725   111.479
+admin search: student name prefix            1.017     0.741     1.686
+
+QUERY PLANS (SCAN = reads the whole table, SEARCH = uses an index)
+----------------------------------------------------------------------
+[seats taken (one course)]
+    SCAN enrollments
+[admin card: count by status]
+    SCAN enrollments
+[admin table: one course + PENDING]
+    SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+    SCAN e
+    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+[admin table: all PENDING]
+    SCAN e
+    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR ORDER BY
+[student: my enrollments]
+    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH e USING INDEX sqlite_autoindex_enrollments_1 (student_id=?)
+    SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR ORDER BY
+[student: browse courses]
+    SCAN c USING INDEX sqlite_autoindex_courses_1
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    CORRELATED SCALAR SUBQUERY 1
+    SCAN a
+    CORRELATED SCALAR SUBQUERY 2
+    SEARCH e USING INDEX sqlite_autoindex_enrollments_1 (student_id=? AND course_id=?)
+[CGPA: grades of one student]
+    SCAN g
+    SEARCH a USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH co USING INTEGER PRIMARY KEY (rowid=?)
+[report: enrollment counts]
+    SCAN c
+    BLOOM FILTER ON e (course_id=?)
+    SEARCH e USING AUTOMATIC COVERING INDEX (course_id=?) LEFT-JOIN
+    USE TEMP B-TREE FOR ORDER BY
+[report: grade averages]
+    CO-ROUTINE (subquery-1)
+    SCAN g
+    SEARCH a USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH co USING INTEGER PRIMARY KEY (rowid=?)
+    USE TEMP B-TREE FOR GROUP BY
+    SCAN (subquery-1)
+    USE TEMP B-TREE FOR GROUP BY
+    USE TEMP B-TREE FOR ORDER BY
+[admin search: student name prefix]
+    SCAN students
+    USE TEMP B-TREE FOR ORDER BY
