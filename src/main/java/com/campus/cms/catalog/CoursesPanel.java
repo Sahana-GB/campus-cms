@@ -11,11 +11,11 @@ import java.util.Objects;
 
 /**
  * Administrator panel for maintaining the course catalogue and faculty assignments.
- * Course rules and persistence are delegated to CourseDAO; faculty choices come from FacultyDAO.
+ * Course operations are delegated to CourseService; faculty choices come from FacultyDAO.
  */
 public class CoursesPanel extends JPanel {
 
-    private final CourseDAO courseDAO;
+    private final CourseService courseService;
     private final FacultyDAO facultyDAO;
     private final List<Course> displayedCourses = new ArrayList<>();
 
@@ -40,7 +40,7 @@ public class CoursesPanel extends JPanel {
     }
 
     public CoursesPanel(CourseDAO courseDAO, FacultyDAO facultyDAO) {
-        this.courseDAO = Objects.requireNonNull(courseDAO, "courseDAO");
+        this.courseService = new CourseService(Objects.requireNonNull(courseDAO, "courseDAO"));
         this.facultyDAO = Objects.requireNonNull(facultyDAO, "facultyDAO");
         initUI();
     }
@@ -142,7 +142,7 @@ public class CoursesPanel extends JPanel {
             default -> "ALL";
         };
         try {
-            List<Course> rows = courseDAO.search(searchField.getText().trim(), status, null);
+            List<Course> rows = courseService.search(searchField.getText().trim(), status, null);
             displayedCourses.clear();
             displayedCourses.addAll(rows);
             tableModel.setRowCount(0);
@@ -177,7 +177,7 @@ public class CoursesPanel extends JPanel {
         CourseFields fields = new CourseFields(null);
         if (showCourseForm(fields, "Add Course") != JOptionPane.OK_OPTION) return;
         try {
-            courseDAO.createCourse(fields.code.getText().trim(), fields.title.getText().trim(),
+            courseService.createCourse(fields.code.getText().trim(), fields.title.getText().trim(),
                     fields.integer(fields.credits, "Credits"), fields.integer(fields.capacity, "Capacity"),
                     fields.semester.getText().trim(), fields.slot.getText().trim(), fields.facultyId());
             showInfo("Course created successfully.");
@@ -196,7 +196,7 @@ public class CoursesPanel extends JPanel {
         CourseFields fields = new CourseFields(selected);
         if (showCourseForm(fields, "Edit Course - " + selected.getCode()) != JOptionPane.OK_OPTION) return;
         try {
-            boolean updated = courseDAO.update(selected.getCourseId(), fields.code.getText().trim(),
+            boolean updated = courseService.update(selected.getCourseId(), fields.code.getText().trim(),
                     fields.title.getText().trim(), fields.integer(fields.credits, "Credits"),
                     fields.integer(fields.capacity, "Capacity"), fields.semester.getText().trim(),
                     fields.slot.getText().trim(), fields.facultyId());
@@ -226,8 +226,8 @@ public class CoursesPanel extends JPanel {
                 JOptionPane.YES_NO_OPTION, activate ? JOptionPane.QUESTION_MESSAGE : JOptionPane.WARNING_MESSAGE)
                 != JOptionPane.YES_OPTION) return;
         try {
-            boolean changed = activate ? courseDAO.activate(selected.getCourseId())
-                    : courseDAO.archive(selected.getCourseId());
+            boolean changed = activate ? courseService.activate(selected.getCourseId())
+                    : courseService.archive(selected.getCourseId());
             if (changed) showInfo("Course " + (activate ? "reactivated" : "archived") + " successfully.");
             else showError("Course record was not found.");
             loadCourses();

@@ -150,7 +150,12 @@ public class LoginFrame extends JFrame {
             new com.campus.cms.dashboard.StudentDashboard().setVisible(true);
             return;
         }
+        if (role == Role.FACULTY) {
+            new com.campus.cms.dashboard.FacultyDashboard().setVisible(true);
+            return;
+        }
 
+        // Defensive fallback: all supported roles should be handled above.
         JFrame dashboardFrame = new JFrame(title);
         dashboardFrame.setSize(600, 400);
         dashboardFrame.setLocationRelativeTo(null);
