@@ -192,7 +192,10 @@ public class AdminDashboard extends JFrame {
 
         // Card 3: Enrollment Management
         enrollmentsPanel = new AdminEnrollmentsPanel(enrollmentService);
-        contentPanel.add(enrollmentsPanel, CARD_ENROLLMENTS);
+        javax.swing.JTabbedPane enrollmentTabs = new javax.swing.JTabbedPane();
+        enrollmentTabs.addTab("Enrollments", enrollmentsPanel);
+        enrollmentTabs.addTab("Reports", new com.campus.cms.enrollment.ReportsPanel(enrollmentService));
+        contentPanel.add(enrollmentTabs, CARD_ENROLLMENTS);
 
         // Card 4: Faculty Management
         facultyPanel = new FacultyPanel(facultyDAO);
