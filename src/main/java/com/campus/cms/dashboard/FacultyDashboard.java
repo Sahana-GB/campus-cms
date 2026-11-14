@@ -48,14 +48,16 @@ public class FacultyDashboard extends JFrame {
     private final AssignmentDAO assignmentDAO;
 
     private Faculty currentFaculty;
+    private String facultyProfileIssue;
     private CardLayout cardLayout;
     private JPanel contentPanel;
     private JTable coursesTable;
     private DefaultTableModel coursesTableModel;
     private JComboBox<Course> gradeCourseSelector;
     private JPanel gradesContainer;
-    private GradesPanel currentGradesPanel;
+    private JComponent currentGradesPanel;
     private ProfilePanel profilePanel;
+    private boolean rebuildingCourseSelector;
 
     private DashboardCard assignedCoursesCard;
     private DashboardCard activeCoursesCard;
@@ -96,11 +98,21 @@ public class FacultyDashboard extends JFrame {
 
     private void loadFacultyProfile() {
         User user = session.getCurrentUser();
-        if (user == null) return;
+        if (user == null) {
+            facultyProfileIssue = "No authenticated faculty user was found in the current session.";
+            return;
+        }
         try {
             currentFaculty = facultyDAO.findByUserId(user.getUserId()).orElse(null);
+            if (currentFaculty == null) {
+                facultyProfileIssue = "No faculty profile is linked to login account '" + user.getUsername()
+                        + "'. Ask an administrator to create or repair the faculty profile.";
+            }
         } catch (SQLException ex) {
             currentFaculty = null;
+            facultyProfileIssue = "Could not load your faculty profile: " + ex.getMessage();
+            // Keep a visible diagnostic in the UI and retain the stack trace for developers.
+            ex.printStackTrace();
         }
     }
 
@@ -177,6 +189,15 @@ public class FacultyDashboard extends JFrame {
         header.setAlignmentX(Component.LEFT_ALIGNMENT);
         body.add(header);
 
+        if (facultyProfileIssue != null) {
+            JLabel warning = new JLabel(facultyProfileIssue);
+            warning.setForeground(Theme.DANGER);
+            warning.setFont(Theme.SMALL);
+            warning.setAlignmentX(Component.LEFT_ALIGNMENT);
+            body.add(Box.createVerticalStrut(Theme.SPACE_SM));
+            body.add(warning);
+        }
+
         JPanel metrics = new JPanel(new GridLayout(1, 3, Theme.SPACE_LG, Theme.SPACE_LG));
         metrics.setOpaque(false);
         metrics.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -198,9 +219,7 @@ public class FacultyDashboard extends JFrame {
         body.add(quickTitle);
         body.add(Box.createVerticalStrut(Theme.SPACE_SM));
 
-        JPanel quick = Styles.surface(new FlowLayout(FlowLayout.LEFT, Theme.SPACE_MD, 0));
-        quick.setAlignmentX(Component.LEFT_ALIGNMENT);
-        quick.setMaximumSize(new Dimension(Integer.MAX_VALUE, 125));
+        JPanel quick = Styles.actionBar();
 
         JButton coursesButton = Styles.primary(new JButton("View My Courses \u2192"));
         coursesButton.addActionListener(e -> {
@@ -269,7 +288,9 @@ public class FacultyDashboard extends JFrame {
                 return this;
             }
         });
-        gradeCourseSelector.addActionListener(e -> loadGradesForSelectedCourse());
+        gradeCourseSelector.addActionListener(e -> {
+            if (!rebuildingCourseSelector) loadGradesForSelectedCourse();
+        });
         top.addLabeled("COURSE", gradeCourseSelector);
 
         JButton refresh = Styles.secondary(new JButton("Refresh"));
@@ -296,6 +317,10 @@ public class FacultyDashboard extends JFrame {
     public void refreshDashboard() {
         refreshCourses();
         if (assignedCoursesCard == null) return;
+        if (currentFaculty == null) {
+            setUnavailableStatistics("Faculty profile unavailable");
+            return;
+        }
         try {
             List<Course> courses = courseDAO.search(null, "ALL", getFacultyId());
             long active = courses.stream().filter(Course::isActive).count();
@@ -306,46 +331,84 @@ public class FacultyDashboard extends JFrame {
             assignedCoursesCard.setValue(courses.size());
             activeCoursesCard.setValue(active);
             assignmentsCard.setValue(assignmentCount);
-        } catch (SQLException ex) {
-            assignedCoursesCard.setValue("N/A");
-            activeCoursesCard.setValue("N/A");
-            assignmentsCard.setValue("N/A");
-            assignedCoursesCard.setSubtitle("Could not load dashboard data");
+            assignedCoursesCard.setSubtitle("Courses assigned to you");
+            activeCoursesCard.setSubtitle("Currently active courses");
+            assignmentsCard.setSubtitle("Across your assigned courses");
+        } catch (SQLException | RuntimeException ex) {
+            setUnavailableStatistics("Could not load dashboard data");
+            ex.printStackTrace();
         }
+    }
+
+    private void setUnavailableStatistics(String message) {
+        assignedCoursesCard.setValue("N/A");
+        activeCoursesCard.setValue("N/A");
+        assignmentsCard.setValue("N/A");
+        assignedCoursesCard.setSubtitle(message);
+        activeCoursesCard.setSubtitle(message);
+        assignmentsCard.setSubtitle(message);
     }
 
     public void refreshCourses() {
         if (coursesTableModel == null) return;
-        coursesTableModel.setRowCount(0);
         try {
-            List<Course> courses = courseDAO.search(null, "ALL", getFacultyId());
+            List<Course> courses = currentFaculty == null
+                    ? List.of() : courseDAO.search(null, "ALL", getFacultyId());
+            coursesTableModel.setRowCount(0);
             for (Course course : courses) {
                 coursesTableModel.addRow(new Object[]{course.getCourseId(), course.getCode(),
                         course.getTitle(), course.getCredits(), course.getSemester(),
                         course.getSlot(), course.getStatus()});
             }
             reloadCourseSelector(courses);
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Unable to load your courses: " + ex.getMessage(),
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException | RuntimeException ex) {
+            // A failed refresh must not leave old courses selectable. Keeping stale
+            // selections here could expose a course that is no longer assigned.
+            coursesTableModel.setRowCount(0);
+            reloadCourseSelector(List.of());
+            if (gradesContainer != null) {
+                gradesContainer.removeAll();
+                gradesContainer.add(new JLabel("Unable to load your courses. Please refresh again.",
+                        SwingConstants.CENTER), BorderLayout.CENTER);
+                gradesContainer.revalidate();
+                gradesContainer.repaint();
+            }
+            currentGradesPanel = null;
+            if (isShowing()) {
+                JOptionPane.showMessageDialog(this, "Unable to load your courses: " + ex.getMessage(),
+                        "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
     private void reloadCourseSelector(List<Course> courses) {
         if (gradeCourseSelector == null) return;
         Course previouslySelected = (Course) gradeCourseSelector.getSelectedItem();
-        gradeCourseSelector.removeAllItems();
-        for (Course course : courses) gradeCourseSelector.addItem(course);
-        if (previouslySelected != null) gradeCourseSelector.setSelectedItem(previouslySelected);
-        if (gradeCourseSelector.getSelectedItem() == null) {
-            gradesContainer.removeAll();
-            JLabel noCourseMsg = new JLabel("No courses are currently assigned to you.", SwingConstants.CENTER);
-            noCourseMsg.setFont(Theme.BODY);
-            noCourseMsg.setForeground(Theme.TEXT_MUTED);
-            gradesContainer.add(noCourseMsg, BorderLayout.CENTER);
-            gradesContainer.revalidate();
-            gradesContainer.repaint();
+        Integer previousCourseId = previouslySelected == null ? null : previouslySelected.getCourseId();
+
+        rebuildingCourseSelector = true;
+        try {
+            DefaultComboBoxModel<Course> model = new DefaultComboBoxModel<>();
+            for (Course course : courses) model.addElement(course);
+            gradeCourseSelector.setModel(model);
+
+            // Restore selection only when the same course is still assigned to this
+            // faculty member. Course.equals() alone is not used as a stale-object test.
+            if (previousCourseId != null) {
+                for (Course course : courses) {
+                    if (course.getCourseId() == previousCourseId) {
+                        gradeCourseSelector.setSelectedItem(course);
+                        break;
+                    }
+                }
+            }
+            if (gradeCourseSelector.getSelectedItem() == null && !courses.isEmpty()) {
+                gradeCourseSelector.setSelectedIndex(0);
+            }
+        } finally {
+            rebuildingCourseSelector = false;
         }
+        loadGradesForSelectedCourse();
     }
 
     public void refreshGradesPanel() {
@@ -357,18 +420,25 @@ public class FacultyDashboard extends JFrame {
         if (gradeCourseSelector == null || gradesContainer == null) return;
         Course selected = (Course) gradeCourseSelector.getSelectedItem();
         gradesContainer.removeAll();
-        if (selected == null) {
-            JLabel noSelectedMsg = new JLabel("No assigned course selected.", SwingConstants.CENTER);
-            noSelectedMsg.setFont(Theme.BODY);
-            noSelectedMsg.setForeground(Theme.TEXT_MUTED);
-            gradesContainer.add(noSelectedMsg, BorderLayout.CENTER);
+        if (selected == null || currentFaculty == null) {
+            JLabel msg = new JLabel(currentFaculty == null
+                    ? "Your faculty profile is unavailable. Contact an administrator."
+                    : "No courses are currently assigned to you.", SwingConstants.CENTER);
+            msg.setFont(Theme.BODY);
+            msg.setForeground(Theme.TEXT_MUTED);
+            gradesContainer.add(msg, BorderLayout.CENTER);
             currentGradesPanel = null;
         } else {
-            currentGradesPanel = new GradesPanel(selected.getCourseId(), true, getFacultyId());
+            currentGradesPanel = createGradesPanelForCourse(selected.getCourseId());
             gradesContainer.add(currentGradesPanel, BorderLayout.CENTER);
         }
         gradesContainer.revalidate();
         gradesContainer.repaint();
+    }
+
+    /** Factory hook that keeps dashboard navigation testable without a live grading database. */
+    protected JComponent createGradesPanelForCourse(int courseId) {
+        return new GradesPanel(courseId, true, getFacultyId());
     }
 
     private void openSelectedCourseGrades() {
@@ -414,6 +484,7 @@ public class FacultyDashboard extends JFrame {
     }
 
     public Faculty getCurrentFaculty() { return currentFaculty; }
+    public String getFacultyProfileIssue() { return facultyProfileIssue; }
     public CardLayout getCardLayout() { return cardLayout; }
     public JPanel getContentPanel() { return contentPanel; }
     public JButton getOverviewNavBtn() { return overviewNavBtn; }

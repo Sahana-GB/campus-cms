@@ -168,7 +168,7 @@ public class CourseDAO {
         return changeStatus(courseId, "ARCHIVED");
     }
 
-    /** Reactivates an archived course, subject to the schema's active-slot constraint. */
+    /** Reactivates an archived course; SQLite enforces the active-slot uniqueness rule. */
     public boolean activate(int courseId) throws SQLException {
         return changeStatus(courseId, "ACTIVE");
     }

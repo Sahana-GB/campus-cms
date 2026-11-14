@@ -29,6 +29,24 @@ public final class Styles {
         return p;
     }
 
+    /**
+     * Responsive action panel that wraps buttons cleanly across rows with vertical spacing
+     * and dynamic height, preventing buttons from getting clipped on window resize.
+     */
+    public static JPanel actionBar() {
+        JPanel p = new JPanel(new FilterBar.WrapLayout(FlowLayout.LEFT, Theme.SPACE_MD, Theme.SPACE_SM)) {
+            @Override
+            public Dimension getMaximumSize() {
+                Dimension pref = getPreferredSize();
+                return new Dimension(Integer.MAX_VALUE, pref.height);
+            }
+        };
+        p.setBackground(Theme.SURFACE);
+        p.setBorder(cardBorder());
+        p.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return p;
+    }
+
     // ---- Buttons ----
     private static void baseButton(AbstractButton b) {
         b.setFont(Theme.BODY);

@@ -161,6 +161,7 @@ public class LoginFrame extends JFrame {
             return;
         }
 
+        // Defensive fallback: all supported roles should be handled above.
         JFrame dashboardFrame = new JFrame(title);
         dashboardFrame.setSize(600, 400);
         dashboardFrame.setLocationRelativeTo(null);

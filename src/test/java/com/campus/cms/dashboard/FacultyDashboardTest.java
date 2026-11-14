@@ -16,7 +16,9 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.awt.*;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import java.awt.GraphicsEnvironment;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,29 +28,38 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class FacultyDashboardTest {
 
-    private Session session;
+    private final Session session = Session.getInstance();
     private AuthService authService;
-    private StubFacultyDAO stubFacultyDAO;
-    private StubCourseDAO stubCourseDAO;
-    private StubAssignmentDAO stubAssignmentDAO;
 
-    private static class StubFacultyDAO extends FacultyDAO {
+    static class TestableFacultyDashboard extends FacultyDashboard {
+        TestableFacultyDashboard(AuthService authService, Session session,
+                                 FacultyDAO facultyDAO, CourseDAO courseDAO,
+                                 AssignmentDAO assignmentDAO) {
+            super(authService, session, facultyDAO, courseDAO, assignmentDAO);
+        }
+
+        @Override
+        protected JComponent createGradesPanelForCourse(int courseId) {
+            return new JPanel();
+        }
+    }
+
+    static class StubFacultyDAO extends FacultyDAO {
         Faculty faculty;
 
         @Override
         public Optional<Faculty> findByUserId(int userId) {
-            if (faculty != null && faculty.getUserId() == userId) {
-                return Optional.of(faculty);
-            }
-            return Optional.empty();
+            return Optional.ofNullable(faculty);
         }
     }
 
-    private static class StubCourseDAO extends CourseDAO {
-        final List<Course> courses = new ArrayList<>();
+    static class StubCourseDAO extends CourseDAO {
+        List<Course> courses = new ArrayList<>();
+        boolean failSearch;
 
         @Override
-        public List<Course> search(String query, String status, Integer facultyId) {
+        public List<Course> search(String query, String status, Integer facultyId) throws SQLException {
+            if (failSearch) throw new SQLException("simulated database failure");
             List<Course> result = new ArrayList<>();
             for (Course c : courses) {
                 if (facultyId != null && !facultyId.equals(c.getFacultyId())) {
@@ -63,7 +74,7 @@ class FacultyDashboardTest {
         }
     }
 
-    private static class StubAssignmentDAO extends AssignmentDAO {
+    static class StubAssignmentDAO extends AssignmentDAO {
         final List<Assignment> assignments = new ArrayList<>();
 
         @Override
@@ -81,24 +92,8 @@ class FacultyDashboardTest {
     @BeforeEach
     void setUp() {
         Assumptions.assumeFalse(GraphicsEnvironment.isHeadless());
-        session = Session.getInstance();
         session.logout();
-
-        User facultyUser = new User(10, "prof_sharma", "hash", Role.FACULTY, true);
-        session.login(facultyUser);
-
-        stubFacultyDAO = new StubFacultyDAO();
-        stubFacultyDAO.faculty = new Faculty(101, 10, "Dr. Sharma", "CSE", "sharma@campus.edu", "ACTIVE", "prof_sharma");
-
-        stubCourseDAO = new StubCourseDAO();
-        stubCourseDAO.courses.add(new Course(1, "CS101", "Intro to CS", 4, 60, "Mon/Wed", "A1", 101, Course.ACTIVE));
-        stubCourseDAO.courses.add(new Course(2, "CS301", "Algorithms", 3, 50, "Tue/Thu", "B1", 101, Course.ARCHIVED));
-
-        stubAssignmentDAO = new StubAssignmentDAO();
-        stubAssignmentDAO.assignments.add(new Assignment(1, 1, "HW1", "ASSIGNMENT", "Basic", "2026-11-20", 100, 10, "OPEN", ""));
-        stubAssignmentDAO.assignments.add(new Assignment(2, 1, "Quiz 1", "QUIZ", "Quiz 1", "2026-11-25", 50, 5, "OPEN", ""));
-        stubAssignmentDAO.assignments.add(new Assignment(3, 2, "HW2", "ASSIGNMENT", "Trees", "2026-12-01", 100, 10, "CLOSED", ""));
-
+        session.login(new User(12, "faculty1", "hash", Role.FACULTY, true));
         authService = new AuthService(new UserDAO(), session);
     }
 
@@ -108,78 +103,159 @@ class FacultyDashboardTest {
     }
 
     @Test
-    void dashboardRejectsUnauthorizedRoles() {
+    void rejectsNonFacultySessionAndUnauthorizedRoles() {
         session.logout();
-        assertThrows(SecurityException.class, () ->
-                new FacultyDashboard(authService, session, stubFacultyDAO, stubCourseDAO, stubAssignmentDAO));
+        assertThrows(SecurityException.class, () -> new TestableFacultyDashboard(
+                authService, session, new StubFacultyDAO(), new StubCourseDAO(), new StubAssignmentDAO()));
 
-        User student = new User(2, "student_user", "hash", Role.STUDENT, true);
-        session.login(student);
-        assertThrows(SecurityException.class, () ->
-                new FacultyDashboard(authService, session, stubFacultyDAO, stubCourseDAO, stubAssignmentDAO));
+        session.login(new User(13, "student1", "hash", Role.STUDENT, true));
+        assertThrows(SecurityException.class, () -> new TestableFacultyDashboard(
+                authService, session, new StubFacultyDAO(), new StubCourseDAO(), new StubAssignmentDAO()));
 
-        User admin = new User(3, "admin_user", "hash", Role.ADMIN, true);
-        session.login(admin);
-        assertThrows(SecurityException.class, () ->
-                new FacultyDashboard(authService, session, stubFacultyDAO, stubCourseDAO, stubAssignmentDAO));
+        session.login(new User(1, "admin1", "hash", Role.ADMIN, true));
+        assertThrows(SecurityException.class, () -> new TestableFacultyDashboard(
+                authService, session, new StubFacultyDAO(), new StubCourseDAO(), new StubAssignmentDAO()));
     }
 
     @Test
-    void dashboardInitializesAndCalculatesKPIs() {
-        FacultyDashboard dashboard = new FacultyDashboard(authService, session,
-                stubFacultyDAO, stubCourseDAO, stubAssignmentDAO);
+    void dashboardLoadsLinkedFacultyAndAssignedCourses() {
+        StubFacultyDAO facultyDAO = new StubFacultyDAO();
+        facultyDAO.faculty = new Faculty(3, 12, "Dr. Rao", "CSE",
+                "rao@campus.edu", "ACTIVE", "faculty1");
+        StubCourseDAO courseDAO = new StubCourseDAO();
+        courseDAO.courses.add(new Course(7, "CS701", "Software Engineering", 4, 60,
+                "Fall 2026", "A", 3, "ACTIVE"));
+        courseDAO.courses.add(new Course(8, "CS702", "Cloud Systems", 3, 50,
+                "Fall 2026", "B", 3, "ARCHIVED"));
 
-        assertNotNull(dashboard.getCurrentFaculty());
-        assertEquals(101, dashboard.getCurrentFaculty().getFacultyId());
-        assertEquals("Dr. Sharma", dashboard.getCurrentFaculty().getName());
+        StubAssignmentDAO assignmentDAO = new StubAssignmentDAO();
+        assignmentDAO.assignments.add(new Assignment(1, 7, "HW1", "ASSIGNMENT", "Desc", "2026-11-20", 100, 10, "OPEN", ""));
+        assignmentDAO.assignments.add(new Assignment(2, 7, "Quiz 1", "QUIZ", "Quiz", "2026-11-25", 50, 5, "OPEN", ""));
 
+        FacultyDashboard dashboard = new TestableFacultyDashboard(authService,
+                session, facultyDAO, courseDAO, assignmentDAO);
+
+        assertEquals("Dr. Rao", dashboard.getCurrentFaculty().getName());
+        assertNull(dashboard.getFacultyProfileIssue());
+        assertEquals(2, dashboard.getCoursesTable().getRowCount());
         assertEquals("2", dashboard.getAssignedCoursesCard().getValue());
         assertEquals("1", dashboard.getActiveCoursesCard().getValue());
-        assertEquals("3", dashboard.getAssignmentsCard().getValue());
-
+        assertEquals("2", dashboard.getAssignmentsCard().getValue());
+        assertNotNull(dashboard.getGradesNavBtn());
         assertTrue(dashboard.getTitle().contains("Faculty Portal"));
         dashboard.dispose();
     }
 
     @Test
+    void dashboardExplainsWhenFacultyProfileIsMissing() {
+        StubFacultyDAO facultyDAO = new StubFacultyDAO();
+        FacultyDashboard dashboard = new TestableFacultyDashboard(authService,
+                session, facultyDAO, new StubCourseDAO(), new StubAssignmentDAO());
+
+        assertNull(dashboard.getCurrentFaculty());
+        assertTrue(dashboard.getFacultyProfileIssue().contains("No faculty profile is linked"));
+        assertEquals("N/A", dashboard.getAssignedCoursesCard().getValue());
+        assertEquals(0, dashboard.getCoursesTable().getRowCount());
+        dashboard.dispose();
+    }
+
+    @Test
     void navigationButtonsTriggerCardSwitches() {
-        FacultyDashboard dashboard = new FacultyDashboard(authService, session,
-                stubFacultyDAO, stubCourseDAO, stubAssignmentDAO);
+        StubFacultyDAO facultyDAO = new StubFacultyDAO();
+        facultyDAO.faculty = new Faculty(3, 12, "Dr. Rao", "CSE",
+                "rao@campus.edu", "ACTIVE", "faculty1");
+        StubCourseDAO courseDAO = new StubCourseDAO();
+        courseDAO.courses.add(new Course(7, "CS701", "Software Engineering", 4, 60,
+                "Fall 2026", "A", 3, "ACTIVE"));
+
+        FacultyDashboard dashboard = new TestableFacultyDashboard(authService,
+                session, facultyDAO, courseDAO, new StubAssignmentDAO());
 
         dashboard.getCoursesNavBtn().doClick();
-        assertEquals(2, dashboard.getCoursesTable().getRowCount());
+        assertEquals(1, dashboard.getCoursesTable().getRowCount());
 
         dashboard.getGradesNavBtn().doClick();
-        assertEquals(2, dashboard.getGradeCourseSelector().getItemCount());
+        assertEquals(1, dashboard.getGradeCourseSelector().getItemCount());
 
         dashboard.getProfileNavBtn().doClick();
         assertNotNull(dashboard.getContentPanel());
 
         dashboard.getOverviewNavBtn().doClick();
-        assertEquals("2", dashboard.getAssignedCoursesCard().getValue());
+        assertEquals("1", dashboard.getAssignedCoursesCard().getValue());
 
         dashboard.dispose();
     }
 
     @Test
     void coursesTablePopulatesCorrectData() {
-        FacultyDashboard dashboard = new FacultyDashboard(authService, session,
-                stubFacultyDAO, stubCourseDAO, stubAssignmentDAO);
+        StubFacultyDAO facultyDAO = new StubFacultyDAO();
+        facultyDAO.faculty = new Faculty(3, 12, "Dr. Rao", "CSE",
+                "rao@campus.edu", "ACTIVE", "faculty1");
+        StubCourseDAO courseDAO = new StubCourseDAO();
+        courseDAO.courses.add(new Course(7, "CS701", "Software Engineering", 4, 60,
+                "Fall 2026", "A", 3, "ACTIVE"));
 
-        assertEquals(2, dashboard.getCoursesTable().getRowCount());
-        assertEquals("CS101", dashboard.getCoursesTable().getValueAt(0, 1));
+        FacultyDashboard dashboard = new TestableFacultyDashboard(authService,
+                session, facultyDAO, courseDAO, new StubAssignmentDAO());
+
+        assertEquals(1, dashboard.getCoursesTable().getRowCount());
+        assertEquals("CS701", dashboard.getCoursesTable().getValueAt(0, 1));
+        assertEquals("Software Engineering", dashboard.getCoursesTable().getValueAt(0, 2));
         assertEquals("ACTIVE", dashboard.getCoursesTable().getValueAt(0, 6));
-
-        assertEquals("CS301", dashboard.getCoursesTable().getValueAt(1, 1));
-        assertEquals("ARCHIVED", dashboard.getCoursesTable().getValueAt(1, 6));
 
         dashboard.dispose();
     }
 
     @Test
+    void refreshRemovesPreviouslySelectedCourseWhenItIsNoLongerAssigned() {
+        StubFacultyDAO facultyDAO = new StubFacultyDAO();
+        facultyDAO.faculty = new Faculty(3, 12, "Dr. Rao", "CSE",
+                "rao@campus.edu", "ACTIVE", "faculty1");
+        StubCourseDAO courseDAO = new StubCourseDAO();
+        courseDAO.courses.add(new Course(7, "CS701", "Software Engineering", 4, 60,
+                "Fall 2026", "A", 3, "ACTIVE"));
+
+        FacultyDashboard dashboard = new TestableFacultyDashboard(authService,
+                session, facultyDAO, courseDAO, new StubAssignmentDAO());
+
+        assertNotNull(dashboard.getGradeCourseSelector().getSelectedItem());
+        courseDAO.courses.clear();
+        dashboard.refreshCourses();
+
+        assertEquals(0, dashboard.getGradeCourseSelector().getItemCount());
+        assertNull(dashboard.getGradeCourseSelector().getSelectedItem());
+        dashboard.dispose();
+    }
+
+    @Test
+    void failedCourseRefreshClearsOldCourseSelection() {
+        StubFacultyDAO facultyDAO = new StubFacultyDAO();
+        facultyDAO.faculty = new Faculty(3, 12, "Dr. Rao", "CSE",
+                "rao@campus.edu", "ACTIVE", "faculty1");
+        StubCourseDAO courseDAO = new StubCourseDAO();
+        courseDAO.courses.add(new Course(7, "CS701", "Software Engineering", 4, 60,
+                "Fall 2026", "A", 3, "ACTIVE"));
+
+        FacultyDashboard dashboard = new TestableFacultyDashboard(authService,
+                session, facultyDAO, courseDAO, new StubAssignmentDAO());
+
+        courseDAO.failSearch = true;
+        dashboard.refreshCourses();
+
+        assertEquals(0, dashboard.getCoursesTable().getRowCount());
+        assertEquals(0, dashboard.getGradeCourseSelector().getItemCount());
+        assertNull(dashboard.getGradeCourseSelector().getSelectedItem());
+        dashboard.dispose();
+    }
+
+    @Test
     void logoutClearsSessionAndDisposes() {
-        FacultyDashboard dashboard = new FacultyDashboard(authService, session,
-                stubFacultyDAO, stubCourseDAO, stubAssignmentDAO);
+        StubFacultyDAO facultyDAO = new StubFacultyDAO();
+        facultyDAO.faculty = new Faculty(3, 12, "Dr. Rao", "CSE",
+                "rao@campus.edu", "ACTIVE", "faculty1");
+
+        FacultyDashboard dashboard = new TestableFacultyDashboard(authService,
+                session, facultyDAO, new StubCourseDAO(), new StubAssignmentDAO());
         assertTrue(session.isLoggedIn());
 
         dashboard.handleLogout();

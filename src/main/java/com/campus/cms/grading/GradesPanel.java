@@ -132,17 +132,40 @@ public class GradesPanel extends JPanel {
                 publishBtn.setText(anyPublished ? "Unpublish (Revert to Draft)" : "Publish Grades");
             }
 
+            java.util.Map<Integer, Grade> gradeMap = new java.util.LinkedHashMap<>();
             for (Grade g : grades) {
-                // Students only see their own published grades
-                if (!isFaculty && (g.getStudentId() != currentUserId || g.getPublished() == 0)) {
-                    continue;
+                gradeMap.put(g.getStudentId(), g);
+            }
+
+            if (isFaculty) {
+                List<Integer> enrolled = gradeService.getEnrolledStudentIds(courseId);
+                for (int studentId : enrolled) {
+                    Grade g = gradeMap.remove(studentId);
+                    tableModel.addRow(new Object[]{
+                            studentId,
+                            g != null ? g.getMarks() : 0.0,
+                            selected.getMaxMarks(),
+                            g != null && g.getFeedback() != null ? g.getFeedback() : ""
+                    });
                 }
-                tableModel.addRow(new Object[]{
-                        g.getStudentId(),
-                        g.getMarks(),
-                        selected.getMaxMarks(),
-                        g.getFeedback() != null ? g.getFeedback() : ""
-                });
+                for (Grade g : gradeMap.values()) {
+                    tableModel.addRow(new Object[]{
+                            g.getStudentId(),
+                            g.getMarks(),
+                            selected.getMaxMarks(),
+                            g.getFeedback() != null ? g.getFeedback() : ""
+                    });
+                }
+            } else {
+                Grade g = gradeMap.get(currentUserId);
+                if (g != null && g.getPublished() == 1) {
+                    tableModel.addRow(new Object[]{
+                            g.getStudentId(),
+                            g.getMarks(),
+                            selected.getMaxMarks(),
+                            g.getFeedback() != null ? g.getFeedback() : ""
+                    });
+                }
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error loading grades: " + ex.getMessage(),
@@ -160,8 +183,11 @@ public class GradesPanel extends JPanel {
         try {
             for (int row = 0; row < tableModel.getRowCount(); row++) {
                 int studentId = Integer.parseInt(tableModel.getValueAt(row, 0).toString());
-                double marks = Double.parseDouble(tableModel.getValueAt(row, 1).toString());
-                String feedback = tableModel.getValueAt(row, 3).toString();
+                Object marksVal = tableModel.getValueAt(row, 1);
+                double marks = marksVal != null && !marksVal.toString().isBlank()
+                        ? Double.parseDouble(marksVal.toString().trim()) : 0.0;
+                Object feedbackVal = tableModel.getValueAt(row, 3);
+                String feedback = feedbackVal != null ? feedbackVal.toString() : "";
 
                 Grade grade = new Grade(0, selected.getAssignmentId(), studentId, marks, feedback, 0);
                 gradeService.saveOrUpdateGrade(grade);

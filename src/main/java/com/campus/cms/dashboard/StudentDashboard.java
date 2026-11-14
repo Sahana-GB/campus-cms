@@ -273,8 +273,7 @@ public class StudentDashboard extends JFrame {
         body.add(quickTitle);
         body.add(Box.createVerticalStrut(Theme.SPACE_SM));
 
-        JPanel quickActions = Styles.surface(new FlowLayout(FlowLayout.LEFT, Theme.SPACE_MD, 0));
-        quickActions.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel quickActions = Styles.actionBar();
 
         JButton gotoCoursesBtn = Styles.primary(new JButton("View My Courses \u2192"));
         gotoCoursesBtn.addActionListener(e -> {
@@ -299,7 +298,6 @@ public class StudentDashboard extends JFrame {
         quickActions.add(gotoCoursesBtn);
         quickActions.add(gotoAssignmentsBtn);
         quickActions.add(gotoProfileBtn);
-        quickActions.setMaximumSize(new Dimension(Integer.MAX_VALUE, quickActions.getPreferredSize().height));
         body.add(quickActions);
         body.add(Box.createVerticalStrut(Theme.SPACE_XL));
 

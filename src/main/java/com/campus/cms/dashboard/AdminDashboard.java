@@ -164,7 +164,10 @@ public class AdminDashboard extends JFrame {
 
         // Card 3: Enrollment Management
         enrollmentsPanel = new AdminEnrollmentsPanel(enrollmentService);
-        contentPanel.add(enrollmentsPanel, CARD_ENROLLMENTS);
+        javax.swing.JTabbedPane enrollmentTabs = new javax.swing.JTabbedPane();
+        enrollmentTabs.addTab("Enrollments", enrollmentsPanel);
+        enrollmentTabs.addTab("Reports", new com.campus.cms.enrollment.ReportsPanel(enrollmentService));
+        contentPanel.add(enrollmentTabs, CARD_ENROLLMENTS);
 
         // Card 4: Faculty Management
         facultyPanel = new FacultyPanel(facultyDAO);
@@ -218,12 +221,17 @@ public class AdminDashboard extends JFrame {
         body.add(cardsRow);
         body.add(Box.createVerticalStrut(Theme.SPACE_XL));
 
-        // Quick access
-        JPanel quickActions = Styles.surface(new FlowLayout(FlowLayout.LEFT, Theme.SPACE_MD, 0));
-        quickActions.setAlignmentX(Component.LEFT_ALIGNMENT);
-        quickActions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 125));
+        // Quick access heading
+        JLabel quickTitle = new JLabel("Quick Access");
+        quickTitle.setFont(Theme.HEADING);
+        quickTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        body.add(quickTitle);
+        body.add(Box.createVerticalStrut(Theme.SPACE_SM));
 
-        JButton gotoStudentsBtn = Styles.primary(new JButton("Open Student Management \u2192"));
+        // Quick access action bar
+        JPanel quickActions = Styles.actionBar();
+
+        JButton gotoStudentsBtn = Styles.primary(new JButton("Manage Students \u2192"));
         gotoStudentsBtn.addActionListener(e -> {
             showCard(CARD_STUDENTS);
             studentsPanel.loadStudents();
@@ -255,18 +263,11 @@ public class AdminDashboard extends JFrame {
             profilePanel.refreshProfile();
         });
 
-        JLabel quickTitle = new JLabel("Quick Access");
-        quickTitle.setFont(Theme.HEADING);
-        quickTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        body.add(quickTitle);
-        body.add(Box.createVerticalStrut(Theme.SPACE_SM));
-
         quickActions.add(gotoStudentsBtn);
         quickActions.add(gotoEnrollmentsBtn);
         quickActions.add(gotoFacultyBtn);
         quickActions.add(gotoCoursesBtn);
         quickActions.add(gotoProfileBtn);
-        quickActions.setMaximumSize(new Dimension(Integer.MAX_VALUE, quickActions.getPreferredSize().height));
         body.add(quickActions);
 
         panel.add(body, BorderLayout.NORTH);
