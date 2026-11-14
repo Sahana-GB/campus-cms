@@ -1,5 +1,11 @@
 package com.campus.cms.catalog;
 
+import com.campus.cms.core.ui.FilterBar;
+import com.campus.cms.core.ui.PageHeader;
+import com.campus.cms.core.ui.StatusBadge;
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -40,24 +46,24 @@ public class FacultyPanel extends JPanel {
     }
 
     private void initUI() {
-        setLayout(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(16, 20, 16, 20));
+        setLayout(new BorderLayout(0, Theme.SPACE_MD));
+        setBackground(Theme.BACKGROUND);
+        setBorder(Styles.pagePadding());
 
-        JPanel top = new JPanel();
-        top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
+        JPanel top = new JPanel(new BorderLayout(0, Theme.SPACE_MD));
+        top.setOpaque(false);
 
-        JLabel title = new JLabel("Faculty Management");
-        title.setFont(new Font("SansSerif", Font.BOLD, 20));
-        JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        titleRow.add(title);
-        top.add(titleRow);
+        PageHeader header = new PageHeader("Faculty Management",
+                "Create, search, and manage faculty members and their accounts.");
+        top.add(header, BorderLayout.NORTH);
 
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
-        addButton = button("Add Faculty", Font.BOLD);
-        editButton = button("Edit Faculty", Font.PLAIN);
-        deactivateButton = button("Deactivate", Font.PLAIN);
-        reactivateButton = button("Reactivate", Font.PLAIN);
-        refreshButton = button("Refresh", Font.PLAIN);
+        FilterBar filterBar = new FilterBar();
+
+        addButton = Styles.primary(new JButton("Add Faculty"));
+        editButton = Styles.secondary(new JButton("Edit Faculty"));
+        deactivateButton = Styles.destructive(new JButton("Deactivate"));
+        reactivateButton = Styles.secondary(new JButton("Reactivate"));
+        refreshButton = Styles.secondary(new JButton("Refresh"));
 
         editButton.setEnabled(false);
         deactivateButton.setEnabled(false);
@@ -69,37 +75,37 @@ public class FacultyPanel extends JPanel {
         reactivateButton.addActionListener(e -> changeSelectedStatus(true));
         refreshButton.addActionListener(e -> loadFaculty());
 
-        toolbar.add(addButton);
-        toolbar.add(editButton);
-        toolbar.add(deactivateButton);
-        toolbar.add(reactivateButton);
-        toolbar.add(refreshButton);
-        top.add(toolbar);
+        filterBar.add(addButton);
+        filterBar.add(editButton);
+        filterBar.add(deactivateButton);
+        filterBar.add(reactivateButton);
+        filterBar.add(refreshButton);
 
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
-        filters.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(225, 230, 235)),
-                new EmptyBorder(4, 2, 4, 2)));
-        searchField = new JTextField(20);
-        searchField.putClientProperty("JTextField.placeholderText", "Search name, department or email...");
+        searchField = new JTextField();
+        Styles.input(searchField, 200);
+        searchField.putClientProperty("JTextField.placeholderText", "Search name, department...");
         searchField.addActionListener(e -> loadFaculty());
-        JButton searchButton = new JButton("Search");
+
+        JButton searchButton = Styles.secondary(new JButton("Search"));
         searchButton.addActionListener(e -> loadFaculty());
-        JButton resetButton = new JButton("Reset");
+
+        statusFilter = new JComboBox<>(new String[]{"All Faculty", "Active Only", "Inactive Only"});
+        Styles.input(statusFilter, 130);
+        statusFilter.addActionListener(e -> loadFaculty());
+
+        JButton resetButton = Styles.secondary(new JButton("Reset"));
         resetButton.addActionListener(e -> {
             searchField.setText("");
             statusFilter.setSelectedIndex(0);
             loadFaculty();
         });
-        statusFilter = new JComboBox<>(new String[]{"All Faculty", "Active Only", "Inactive Only"});
-        statusFilter.addActionListener(e -> loadFaculty());
-        filters.add(new JLabel("Search:"));
-        filters.add(searchField);
-        filters.add(searchButton);
-        filters.add(new JLabel("Status:"));
-        filters.add(statusFilter);
-        filters.add(resetButton);
-        top.add(filters);
+
+        filterBar.addLabeled("SEARCH", searchField);
+        filterBar.add(searchButton);
+        filterBar.addLabeled("STATUS", statusFilter);
+        filterBar.add(resetButton);
+
+        top.add(filterBar, BorderLayout.CENTER);
         add(top, BorderLayout.NORTH);
 
         String[] columns = {"ID", "Name", "Department", "Email", "Username", "Status"};
@@ -108,17 +114,20 @@ public class FacultyPanel extends JPanel {
         };
         facultyTable = new JTable(tableModel);
         facultyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        facultyTable.setRowHeight(26);
+        Styles.table(facultyTable);
+        facultyTable.getColumnModel().getColumn(5).setCellRenderer(new StatusBadge.Renderer());
         facultyTable.getTableHeader().setReorderingAllowed(false);
         facultyTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) updateActionButtons();
         });
-        add(new JScrollPane(facultyTable), BorderLayout.CENTER);
+        add(Styles.scroll(facultyTable), BorderLayout.CENTER);
 
         JPanel bottom = new JPanel(new BorderLayout());
-        bottom.setBorder(new EmptyBorder(6, 4, 4, 4));
+        bottom.setOpaque(false);
+        bottom.setBorder(new EmptyBorder(Theme.SPACE_SM, Theme.SPACE_XS, Theme.SPACE_XS, Theme.SPACE_XS));
         countLabel = new JLabel("No faculty loaded.");
-        countLabel.setForeground(Color.DARK_GRAY);
+        countLabel.setFont(Theme.SMALL);
+        countLabel.setForeground(Theme.TEXT_MUTED);
         bottom.add(countLabel, BorderLayout.WEST);
         add(bottom, BorderLayout.SOUTH);
     }

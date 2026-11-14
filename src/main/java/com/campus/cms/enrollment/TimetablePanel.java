@@ -1,5 +1,8 @@
 package com.campus.cms.enrollment;
 
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
+
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -23,15 +26,17 @@ public class TimetablePanel extends JPanel {
         this.service = service;
 
         setLayout(new BorderLayout(8, 8));
-        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        setBorder(BorderFactory.createEmptyBorder(Theme.SPACE_LG, Theme.SPACE_LG, Theme.SPACE_LG, Theme.SPACE_LG));
 
         JTable table = new JTable(model);
-        table.setFillsViewportHeight(true);
-        table.setRowHeight(table.getRowHeight() + 6);
+        Styles.table(table);
 
-        add(new JLabel("My courses by slot (two courses never share a slot, so there are no clashes)"),
-                BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JLabel hint = new JLabel("My courses by slot (two courses never share a slot, so there are no clashes)");
+        hint.setFont(Theme.SUBTITLE);
+        hint.setForeground(Theme.TEXT_MUTED);
+        hint.setBorder(BorderFactory.createEmptyBorder(0, 0, Theme.SPACE_SM, 0));
+        add(hint, BorderLayout.NORTH);
+        add(Styles.scroll(table), BorderLayout.CENTER);
         UiUtil.refreshWhenShown(this, this::refresh);
     }
 

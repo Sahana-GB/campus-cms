@@ -70,6 +70,22 @@ public class GradeDAO {
         return list;
     }
 
+    public List<Integer> getEnrolledStudentIds(int courseId) {
+        List<Integer> list = new ArrayList<>();
+        String sql = "SELECT student_id FROM enrollments WHERE course_id = ? AND status = 'APPROVED' ORDER BY student_id";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, courseId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                list.add(rs.getInt("student_id"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     private Grade mapResultSetToGrade(ResultSet rs) throws SQLException {
         return new Grade(
             rs.getInt("grade_id"),

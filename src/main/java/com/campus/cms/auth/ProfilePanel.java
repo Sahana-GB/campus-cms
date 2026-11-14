@@ -1,6 +1,9 @@
 package com.campus.cms.auth;
 
 import com.campus.cms.core.Session;
+import com.campus.cms.core.ui.PageHeader;
+import com.campus.cms.core.ui.Styles;
+import com.campus.cms.core.ui.Theme;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -39,34 +42,30 @@ public class ProfilePanel extends JPanel {
 
     private void initUI() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBorder(new EmptyBorder(20, 24, 20, 24));
+        setBackground(Theme.BACKGROUND);
+        setBorder(Styles.pagePadding());
 
         // ------------------ Header ------------------
-        JLabel titleLabel = new JLabel("My Profile");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel subtitleLabel = new JLabel("View your account details and manage password credentials");
-        subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        subtitleLabel.setForeground(Color.GRAY);
-        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        PageHeader header = new PageHeader("My Profile",
+                "View your account details and manage password credentials");
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // ------------------ Profile Info Card ------------------
         JPanel infoCard = new JPanel(new GridLayout(2, 2, 12, 10));
-        infoCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Account Details"),
-                new EmptyBorder(12, 14, 12, 14)
-        ));
+        infoCard.setBackground(Theme.SURFACE);
+        infoCard.setBorder(Styles.cardBorder());
         infoCard.setAlignmentX(Component.LEFT_ALIGNMENT);
-        infoCard.setMaximumSize(new Dimension(500, 100));
+        infoCard.setMaximumSize(new Dimension(520, 110));
 
         JLabel userHeaderLabel = new JLabel("Username:");
-        userHeaderLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
+        userHeaderLabel.setFont(Theme.BODY_BOLD);
+        userHeaderLabel.setForeground(Theme.TEXT_MUTED);
         usernameValueLabel = new JLabel("—");
         usernameValueLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
 
         JLabel roleHeaderLabel = new JLabel("Role:");
-        roleHeaderLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
+        roleHeaderLabel.setFont(Theme.BODY_BOLD);
+        roleHeaderLabel.setForeground(Theme.TEXT_MUTED);
         roleValueLabel = new JLabel("—");
         roleValueLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
 
@@ -78,14 +77,18 @@ public class ProfilePanel extends JPanel {
         // ------------------ Change Password Form ------------------
         JPanel passwordCard = new JPanel();
         passwordCard.setLayout(new BoxLayout(passwordCard, BoxLayout.Y_AXIS));
-        passwordCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Change Password"),
-                new EmptyBorder(12, 14, 14, 14)
-        ));
+        passwordCard.setBackground(Theme.SURFACE);
+        passwordCard.setBorder(Styles.cardBorder());
+        JLabel passwordTitle = new JLabel("Change Password");
+        passwordTitle.setFont(Theme.HEADING);
+        passwordTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        passwordCard.add(passwordTitle);
+        passwordCard.add(Box.createVerticalStrut(Theme.SPACE_MD));
         passwordCard.setAlignmentX(Component.LEFT_ALIGNMENT);
-        passwordCard.setMaximumSize(new Dimension(500, 240));
+        passwordCard.setMaximumSize(new Dimension(520, 300));
 
         JPanel formGrid = new JPanel(new GridLayout(3, 2, 10, 10));
+        formGrid.setOpaque(false);
         formGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel currentLabel = new JLabel("Current Password:");
@@ -110,8 +113,7 @@ public class ProfilePanel extends JPanel {
         messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Action Button
-        updatePasswordButton = new JButton("Update Password");
-        updatePasswordButton.setFont(new Font("SansSerif", Font.BOLD, 12));
+        updatePasswordButton = Styles.primary(new JButton("Update Password"));
         updatePasswordButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         updatePasswordButton.addActionListener(e -> handleChangePassword());
 
@@ -122,13 +124,11 @@ public class ProfilePanel extends JPanel {
         passwordCard.add(updatePasswordButton);
 
         // Assemble overall panel
-        add(titleLabel);
-        add(Box.createVerticalStrut(4));
-        add(subtitleLabel);
-        add(Box.createVerticalStrut(16));
+        add(header);
         add(infoCard);
-        add(Box.createVerticalStrut(18));
+        add(Box.createVerticalStrut(Theme.SPACE_LG));
         add(passwordCard);
+        add(Box.createVerticalGlue());
     }
 
     /**

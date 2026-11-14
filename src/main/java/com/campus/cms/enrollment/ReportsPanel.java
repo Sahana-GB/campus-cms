@@ -1,5 +1,6 @@
 package com.campus.cms.enrollment;
 
+import com.campus.cms.core.ui.Styles;
 import com.campus.cms.enrollment.EnrollmentDAO.CourseOption;
 import com.campus.cms.reports.CsvExporter;
 import com.campus.cms.reports.ReportTable;
@@ -42,10 +43,11 @@ public class ReportsPanel extends JPanel {
 
         table.setAutoCreateRowSorter(true);
         table.setFillsViewportHeight(true);
+        Styles.table(table);
 
-        JButton show = new JButton("Show report");
+        JButton show = Styles.primary(new JButton("Show report"));
         show.addActionListener(e -> showReport());
-        JButton export = new JButton("Export CSV");
+        JButton export = Styles.secondary(new JButton("Export CSV"));
         export.addActionListener(e -> exportCsv());
 
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -57,7 +59,7 @@ public class ReportsPanel extends JPanel {
         top.add(export);
 
         add(top, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(Styles.scroll(table), BorderLayout.CENTER);
         add(summary, BorderLayout.SOUTH);
 
         reportBox.addActionListener(e -> updateCourseVisibility());
