@@ -1,6 +1,5 @@
 \documentclass[11pt,a4paper]{article}
 
-% Essential packages
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
@@ -14,7 +13,6 @@
 \usepackage{hyperref}
 \usepackage{listings}
 
-% Hyperref configuration
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -22,7 +20,6 @@
     urlcolor=blue!70!black
 }
 
-% Code listing styling
 \lstset{
     basicstyle=\small\ttfamily,
     breaklines=true,
@@ -38,9 +35,10 @@
 
 \author{
     \textbf{Team Campus CMS} \\
-    Person A: Dashboard Integration, UI Design System, Synthetic Data Generator \\
-    Person B: Faculty, Course Management, and Grading \\
-    Person C: Enrollment Management, Reporting, and Query Profiling
+    V Kavyanjali: Dashboard Integration, UI Design System, Synthetic Data Generator \\
+    Avani Rohit Kasar: Faculty, Course Management, and Grading \\
+    Sahana G Bhagwat: Enrollment Management, Reporting, and Query Profiling \\
+    SiriValli: Grading \& Assessment and Integration/Testing
 }
 
 \date{\today}
@@ -56,25 +54,16 @@ Campus CMS is a single-semester course management desktop application built with
 \tableofcontents
 \newpage
 
-% Section 1: Introduction
 \input{sections/intro}
 
-% Section 2: Database Design
 \input{sections/database}
 
-% Section 3: Person A Implementation (UI Design System, Dashboards, Synthetic Data Generator)
-\input{sections/person_a_implementation}
-
-% Section 4: Person C Implementation (Enrollment and Reporting)
 \input{sections/implementation}
 
-% Section 5: Performance Profiling and Query Optimization (Joint A & C)
 \input{sections/profiling}
 
-% Section 6: Automated Testing & Verification
 \input{sections/testing}
 
-% Section 7: Conclusion & Future Work
 \input{sections/conclusion}
 
 \end{document}

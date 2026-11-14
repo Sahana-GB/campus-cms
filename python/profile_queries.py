@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Times the queries the Java app runs most, on a big database (Person C + Person A).
+"""Times the queries the Java app runs most, on a big database.
 
   python3 python/profile_queries.py                       # timings + query plans
   python3 python/profile_queries.py --drop-indexes        # remove the profiling indexes (for a fair "before")

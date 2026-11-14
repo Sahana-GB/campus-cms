@@ -1,10 +1,8 @@
-% Campus CMS project report -- Automated Testing and Quality Assurance
-% Include from main.tex with \input{sections/testing}
 \section{Automated Testing and Verification}
 \label{sec:testing}
 
 \subsection{Testing Philosophy and Strategy}
-To prevent regressions across collaborative features and guarantee data integrity, the project implements a rigorous dual-layer automated testing strategy combining Java JUnit 5 tests and Python standard library unit tests. 
+To prevent regressions across collaborative features and guarantee data integrity, the project implements a rigorous dual-layer automated testing strategy combining Java JUnit 5 tests and Python standard library unit tests.
 
 Testing guidelines strictly enforce:
 \begin{enumerate}
@@ -14,7 +12,7 @@ Testing guidelines strictly enforce:
 \end{enumerate}
 
 \subsection{Java Test Suite (JUnit 5)}
-The Java test suite comprises **136 automated test cases** across all architectural tiers:
+The Java test suite comprises \textbf{136 automated test cases} across all architectural tiers:
 \begin{itemize}
     \item \textbf{Authentication and Session (\texttt{com.campus.cms.auth}):} Validates password hashing and verification in \texttt{PasswordUtilTest}, role permission checks in \texttt{AuthServiceTest}, user queries in \texttt{UserDAOTest}, profile password modifications in \texttt{ProfilePanelTest}, and login window state transitions in \texttt{LoginFrameTest}.
     \item \textbf{Student Management (\texttt{com.campus.cms.students}):} Tests CRUD lifecycle, roll number uniqueness, email constraints, and active/inactive state transitions in \texttt{StudentDAOTest} and \texttt{StudentsPanelTest}.
@@ -27,11 +25,11 @@ The Java test suite comprises **136 automated test cases** across all architectu
 All 136 tests execute via Maven and pass with zero failures:
 \begin{verbatim}
 mvn test
-# Results: Tests run: 136, Failures: 0, Errors: 0, Skipped: 0
+Results: Tests run: 136, Failures: 0, Errors: 0, Skipped: 0
 \end{verbatim}
 
 \subsection{Python Test Suite (unittest)}
-The synthetic student data generator is verified by 11 comprehensive automated tests in \texttt{python/test_generate_data.py}:
+The synthetic student data generator is verified by 11 comprehensive automated tests in \texttt{python/test\_generate\_data.py}:
 \begin{itemize}
     \item Validation of cohort generation across sizes: 100, 1{,}000, and 10{,}000 records.
     \item Exact Java PBKDF2-HMAC-SHA256 password hash vector verification.
@@ -45,5 +43,5 @@ The synthetic student data generator is verified by 11 comprehensive automated t
 The Python suite executes cleanly:
 \begin{verbatim}
 python -m unittest python/test_generate_data.py
-# Ran 11 tests in 49.146s -- OK
+Ran 11 tests in 49.146s -- OK
 \end{verbatim}

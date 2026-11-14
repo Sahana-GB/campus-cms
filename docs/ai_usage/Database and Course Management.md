@@ -15,7 +15,7 @@ I used ChatGPT and Claude as supporting tools during the development and documen
 - **Database diagram:** Getting assistance in preparing an entity-relationship diagram based on the project's `db/schema.sql`.
 
 ## My contributions
-- Worked on the database and course-management responsibilities assigned to Person B.
+- Worked on the database and course-management module responsibilities.
 - Provided the project structure, existing source files, and error messages as context when asking for AI assistance.
 - Evaluated the suggestions against the team's agreed design and existing code.
 - Coordinated necessary integration changes while avoiding unrelated modifications to teammates' modules.

@@ -41,7 +41,6 @@ public class EnrollmentService {
         this.factory = factory;
     }
 
-    // ---- The only methods that depend on Person A's Session. ----
     protected Role currentRole() {
         return Session.getInstance().getRole();
     }
@@ -291,8 +290,6 @@ public class EnrollmentService {
             throw wrap(e);
         }
     }
-
-    // ================================================= small helpers for Person A's dashboards
 
     /** Seats still free in a course: capacity minus APPROVED enrollments. */
     public int seatsLeft(int courseId) throws EnrollmentException {

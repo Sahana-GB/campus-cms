@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * A report as plain data: a title, column headers and rows.
- * Person A's report screen can show it in a JTable; CsvExporter can write it to a file.
+ * ReportsPanel can show it in a JTable; CsvExporter can write it to a file.
  */
 public record ReportTable(String title, List<String> headers, List<List<Object>> rows) {
 

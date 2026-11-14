@@ -16,7 +16,7 @@ A desktop-based academic course management system built with Java 17, Swing, Fla
 ### Faculty Portal
 - **Overview & Load Summary**: View assigned courses, enrolled student tallies, and upcoming assessment schedules.
 - **Course Roster**: Inspect approved student enrollments for assigned courses.
-- **Assignments & Quizzes**: Create assessments with customizable weight, maximum marks, due dates, and status (`OPEN` / `CLOSED`).
+- **Assignments & Quizzes**: Create assessments with customizable weight, maximum marks, due dates, optional material attachments, and status (`OPEN` / `CLOSED`).
 - **Grading & Feedback**: Auto-populates all enrolled students into the grading table; allows saving draft scores and one-click publishing of final marks and feedback.
 
 ### Student Portal
@@ -36,7 +36,7 @@ A desktop-based academic course management system built with Java 17, Swing, Fla
 - **Security & Authentication**: PBKDF2-HMAC-SHA256 password hashing (10,000 iterations, 16-byte cryptographically secure salt, 32-byte key) and role-guarded session management.
 - **Build System**: Apache Maven 3.9+ with `maven-shade-plugin` packaging an executable uber-jar.
 - **Testing**: JUnit 5 (Java, 136 tests) and standard library `unittest` (Python, 11 tests).
-- **Synthetic Data & Analytics**: Python 3 standard library tools for synthetic data generation (`generate_data.py`), query profiling (`profile_queries.py`), and visualization (`reports.py`).
+- **Synthetic Data & Analytics**: Python 3 tools for synthetic data generation (`generate_data.py`, `generate_enrollment_data.py`), query profiling (`profile_queries.py`), and visualization (`reports.py`).
 
 ---
 
@@ -45,40 +45,54 @@ A desktop-based academic course management system built with Java 17, Swing, Fla
 ```
 campus-cms/
 ├── db/
-│   ├── schema.sql           # Base DDL: users, students, faculty, courses, enrollments, assignments, grades
-│   ├── seed.sql             # Demonstration fixtures with default accounts and sample courses
-│   └── indexes.sql          # Performance B-tree indexes for query optimization
+│   ├── schema.sql                  # Base DDL: users, students, faculty, courses, enrollments, assignments, grades
+│   ├── seed.sql                    # Demonstration fixtures with default accounts and sample courses
+│   └── indexes.sql                 # Performance B-tree indexes for query optimization
 ├── data/
-│   └── campus.db            # Local SQLite database (created via scripts/setup.sh)
+│   └── campus.db                   # Local SQLite database (created via scripts/setup.sh)
 ├── src/
 │   ├── main/java/com/campus/cms/
-│   │   ├── auth/            # Authentication, UserDAO, PasswordUtil, LoginFrame, ProfilePanel
-│   │   ├── catalog/         # Course model, CourseDAO, CourseService, CoursesPanel
-│   │   ├── core/            # Database connection, Session management, core UI design system
-│   │   │   └── ui/          # Theme, Styles, SidebarNav, PageHeader, FilterBar, DashboardCard, StatusBadge
-│   │   ├── dashboard/       # AdminDashboard, FacultyDashboard, StudentDashboard
-│   │   ├── enrollment/      # EnrollmentDAO, EnrollmentService, Browse/MyCourses/Timetable/Reports panels
-│   │   ├── faculty/         # Faculty model, FacultyDAO, FacultyPanel
-│   │   ├── grading/         # Assignment, Grade, AssignmentDAO, GradeDAO, GradesPanel
-│   │   └── students/        # Student model, StudentDAO, StudentsPanel
-│   └── test/java/           # 136 comprehensive JUnit 5 integration and unit tests
+│   │   ├── Main.java               # Application entry point
+│   │   ├── auth/                   # AuthService, LoginFrame, PasswordUtil, ProfilePanel, User, UserDAO
+│   │   ├── catalog/                # Course, CourseDAO, CourseService, CoursesPanel, Faculty, FacultyDAO, FacultyPanel
+│   │   ├── core/                   # Database, Role, Session, Settings, DashboardCard
+│   │   │   └── ui/                 # Theme, Styles, SidebarNav, PageHeader, FilterBar, StatusBadge
+│   │   ├── dashboard/              # AdminDashboard, FacultyDashboard, StudentDashboard
+│   │   ├── enrollment/             # Enrollment, EnrollmentDAO, EnrollmentService, CgpaCalculator,
+│   │   │                           # AdminEnrollmentsPanel, BrowsePanel, StudentCoursesPanel, TimetablePanel, ReportsPanel
+│   │   ├── grading/                # Assignment, AssignmentDAO, AssignmentsPanel, Grade, GradeDAO, GradeService,
+│   │   │                           # GradesPanel, Material, StudentAssignmentsPanel, StudentGradesPanel, FacultyReportsPanel
+│   │   ├── reports/                # ReportTable, CsvExporter
+│   │   └── students/               # Student, StudentDAO, StudentsPanel
+│   └── test/java/com/campus/cms/   # 136 JUnit 5 integration and unit tests
 ├── python/
-│   ├── generate_data.py     # Deterministic synthetic student generator (scales to 10,000+ records)
-│   ├── test_generate_data.py# 11 automated unit tests for data generator
-│   ├── profile_queries.py   # Benchmark script for profiling critical database queries
-│   ├── reports.py           # CLI reports and matplotlib grade distribution charts
-│   └── README.md            # Synthetic generator documentation and CLI options
+│   ├── generate_data.py            # Deterministic synthetic student generator (scales to 10,000+ records)
+│   ├── generate_enrollment_data.py # Populates courses, enrollments, assignments, and grades for profiling
+│   ├── test_generate_data.py       # 11 automated unit tests for the synthetic data generator
+│   ├── profile_queries.py          # Benchmark script for profiling critical database queries
+│   ├── reports.py                  # CLI reports and matplotlib grade distribution charts
+│   ├── requirements.txt            # Optional Python dependencies for charting
+│   └── README.md                   # Synthetic generator documentation and CLI options
+├── profiling/
+│   ├── before.txt                  # Query timings and EXPLAIN QUERY PLAN before indexing
+│   ├── after.txt                   # Query timings and EXPLAIN QUERY PLAN after applying db/indexes.sql
+│   └── notes.md                    # Summary and analysis of query profiling results
 ├── docs/
-│   ├── ai_usage/            # AI collaboration declarations 
-│   └── report/              # LaTeX project report and modular section source files
-│       ├── main.tex         # Master report document
-│       └── sections/        # intro.tex, database.tex, person_a_implementation.tex, etc.
+│   ├── er_diagram.png              # Entity-Relationship diagram for the database schema
+│   ├── ai_usage/                   # Module-wise AI usage and verification declarations
+│   │   ├── Dashboard Integration, UI Design System, and Synthetic Data Generator.md
+│   │   ├── Database and Course Management.md
+│   │   ├── Enrollment and Reporting.md
+│   │   └── Grading & Assessment Integration,Testing.md
+│   └── report/                     # LaTeX project report and modular section source files
+│       ├── main.tex                # Master report document
+│       └── sections/               # intro.tex, database.tex, implementation.tex, profiling.tex, testing.tex, conclusion.tex
 └── scripts/
-    ├── setup.sh             # Re-creates data/campus.db from schema.sql and seed.sql
-    ├── build.sh             # Compiles and packages executable JAR with Maven
-    ├── run.sh               # Launches application via target/campus-cms.jar
-    ├── test.sh              # Runs complete JUnit 5 test suite
-    └── profile.sh         # Runs query profiling before and after db/indexes.sql
+    ├── setup.sh                    # Re-creates data/campus.db from schema.sql and seed.sql
+    ├── build.sh                    # Compiles and packages executable JAR with Maven
+    ├── run.sh                      # Launches application via target/campus-cms.jar
+    ├── test.sh                     # Runs complete JUnit 5 test suite
+    └── profile.sh                  # Runs query profiling before and after db/indexes.sql
 ```
 
 ---
@@ -93,15 +107,15 @@ campus-cms/
 ### 1. Initialize Database
 Initialize or reset the SQLite database with seed demonstration data:
 ```bash
-# On Linux / macOS / Git Bash:
 bash scripts/setup.sh
-
-# Or directly using sqlite3 / python:
+```
+Or directly using Python:
+```bash
 python -c "import sqlite3; con = sqlite3.connect('data/campus.db'); con.executescript(open('db/schema.sql').read()); con.executescript(open('db/seed.sql').read()); con.close()"
 ```
 
 ### 2. Build Executable JAR
-Compile sources, execute tests, and package the shaded JAR:
+Compile sources and package the shaded JAR:
 ```bash
 mvn clean package -DskipTests
 ```
@@ -118,22 +132,24 @@ java -jar target/campus-cms.jar
 
 ## Default Login Credentials
 
-For demonstration admin account uses **`admin123`** as password whereas other accounts use password: **`pass123`**
+The administrator account uses **`admin123`** as password, while all faculty and student demonstration accounts use **`pass123`**:
 
-| Role | Username | Full Name / Description |
-|---|---|---|
-| **Administrator** | `admin` | Campus System Administrator |
-| **Faculty** | `faculty1` | Dr. Lakshmi Narayan (Computer Science) |
-| **Faculty** | `faculty2` | Prof. Rajesh Kumar (Electronics) |
-| **Student** | `student1` | Asha Reddy (Roll: `CS2401`, CSE, Year 2) |
-| **Student** | `student2` | Vikram Patel (Roll: `CS2402`, CSE, Year 2) |
-| **Student** | `student3` | Sneha Kulkarni (Roll: `EC2401`, ECE, Year 2) |
+| Role | Username | Password | Full Name / Details |
+|---|---|---|---|
+| **Administrator** | `admin` | `admin123` | Campus System Administrator |
+| **Faculty** | `faculty1` | `pass123` | Dr. Lakshmi Narayan (Computer Science) |
+| **Faculty** | `faculty2` | `pass123` | Dr. Suresh Babu (Computer Science) |
+| **Student** | `student1` | `pass123` | Asha Reddy (Roll: `CS2401`, CSE, Year 2) |
+| **Student** | `student2` | `pass123` | Ravi Kumar (Roll: `CS2402`, CSE, Year 2) |
+| **Student** | `student3` | `pass123` | Meena Iyer (Roll: `CS2403`, CSE, Year 2) |
+| **Student** | `student4` | `pass123` | Karthik Rao (Roll: `EC2401`, ECE, Year 2) |
+| **Student** | `student5` | `pass123` | Divya Nair (Roll: `EC2402`, ECE, Year 3) |
 
 ---
 
 ## Synthetic Student Data Generator
 
-For stress testing and performance benchmarking, Person A implemented a high-speed synthetic data generator that generates realistic student cohorts with full Java PBKDF2 password parity:
+For stress testing and performance benchmarking, the synthetic data generator creates realistic student cohorts with full Java PBKDF2 password parity:
 
 ```bash
 # Dry run: preview 100 records and check distribution without modifying database
@@ -171,7 +187,7 @@ python -m unittest python/test_generate_data.py
 
 ## Performance Profiling & Optimization
 
-Query profiling conducted on 10{,}006 student records and 50{,}040 enrollments demonstrated significant performance gains using the indexes in `db/indexes.sql`:
+Query profiling conducted on 10,006 student records and 50,040 enrollments demonstrated significant performance gains using the indexes in `db/indexes.sql`:
 - **Browse Courses**: Reduced from **146.5 ms** to **1.98 ms** (**74$\times$ speed-up**).
 - **CGPA Calculation**: Reduced from **2.51 ms** to **0.025 ms** (**100$\times$ speed-up**).
 - **Course Seat Lookups**: Reduced from **3.12 ms** to **0.059 ms** (**53$\times$ speed-up**).

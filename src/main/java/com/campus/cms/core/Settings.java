@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Small key/value settings stored in the database (owner: Person C).
+ * Small key/value settings stored in the database.
  *
  * The table is created on first use with CREATE TABLE IF NOT EXISTS, so schema.sql does not
  * have to change. Today it holds one setting: whether the enrollment period is open.

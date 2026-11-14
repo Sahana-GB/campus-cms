@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for the enrollment period setting and the grade reports (Person C).
+ * Tests for the enrollment period setting and the grade reports.
  * Seed: students 1 and 2; courses 1 = CS101 (slot A), 2 = MA101 (slot B, credits 3).
  * MA101 has a Final (100 marks, weight 100) with PUBLISHED grades 60 (student 1) and 90 (student 2),
  * and a Quiz with a DRAFT grade for student 1 that must be ignored.

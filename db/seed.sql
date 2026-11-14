@@ -2,7 +2,7 @@
 -- seed.sql: small demo data for the Campus CMS
 -- Run AFTER schema.sql.  Re-runnable together with schema.sql.
 --
--- Demo logins (put these in the README):
+-- Demo logins:
 --   admin     / admin123
 --   faculty1  / pass123
 --   faculty2  / pass123

@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * CGPA is never stored; it is computed from PUBLISHED grades only (draft marks are ignored).
  *
- * AGREE THIS FORMULA WITH PERSON A AND PERSON D (it is the only place it is defined):
+ * Formula:
  *  1. Course percentage = sum(marks / max_marks * weight) / sum(weight) * 100.
  *     If the course has no weights set (all 0), use the plain average of marks / max_marks.
  *  2. CGPA = credit-weighted average of the course percentages, divided by 10 (so the range is 0 to 10).

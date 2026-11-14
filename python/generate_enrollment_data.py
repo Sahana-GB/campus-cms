@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Adds courses, assignments, enrollments and grades on top of EXISTING students (Person C, for profiling).
+"""Adds courses, assignments, enrollments and grades on top of EXISTING students for profiling.
 Run it AFTER python/generate_data.py. It only ADDS rows (course codes PC001...); nothing existing is changed.
 
   bash scripts/setup.sh
