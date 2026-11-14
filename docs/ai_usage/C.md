@@ -1,5 +1,5 @@
-# AI usage declaration: Sahana (Enrollment, Reports and Profiling)
-
+# AI usage declaration (Enrollment and Reporting)
+### - Sahana CS25BT003
 ## Tool
 Claude 
 ## What I used it for

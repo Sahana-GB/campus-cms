@@ -1,6 +1,5 @@
-# AI usage declaration: Kavya (Dashboard Integration, UI Design System, and Synthetic Data Generator)
-
-
+# AI usage declaration (Dashboard Integration, UI Design System, and Synthetic Data Generator)
+### - V Kavyanjali MC25BT029
 ## Tool
 Antigravity / Gemini (Google DeepMind), used through the agentic IDE and chat interface.
 

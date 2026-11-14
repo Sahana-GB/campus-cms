@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Campus CMS reports (Person C). Reads data/campus.db and prints a table, optionally saves CSV / a chart.
+"""Campus CMS reports. Reads data/campus.db and prints a table, optionally saves CSV / a chart.
 
 Examples (run from the project root):
   python3 python/reports.py enrollment-counts

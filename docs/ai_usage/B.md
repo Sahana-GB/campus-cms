@@ -1,5 +1,5 @@
-# AI Usage Declaration: Person B (Database and Course Management)
-
+# AI Usage Declaration (Database and Course Management)
+### - Avani Rohit Kasar MC25BT027
 ## AI tools used
 - **ChatGPT (OpenAI)**
 - **Claude (Anthropic)**

@@ -69,7 +69,7 @@ campus-cms/
 │   ├── reports.py           # CLI reports and matplotlib grade distribution charts
 │   └── README.md            # Synthetic generator documentation and CLI options
 ├── docs/
-│   ├── ai_usage/            # AI collaboration declarations (A.md, C.md)
+│   ├── ai_usage/            # AI collaboration declarations 
 │   └── report/              # LaTeX project report and modular section source files
 │       ├── main.tex         # Master report document
 │       └── sections/        # intro.tex, database.tex, person_a_implementation.tex, etc.
@@ -78,7 +78,7 @@ campus-cms/
     ├── build.sh             # Compiles and packages executable JAR with Maven
     ├── run.sh               # Launches application via target/campus-cms.jar
     ├── test.sh              # Runs complete JUnit 5 test suite
-    └── profile_c.sh         # Runs query profiling before and after db/indexes.sql
+    └── profile.sh         # Runs query profiling before and after db/indexes.sql
 ```
 
 ---
@@ -118,7 +118,7 @@ java -jar target/campus-cms.jar
 
 ## Default Login Credentials
 
-All demonstration accounts use the default password: **`pass123`**
+For demonstration admin account uses **`admin123`** as password whereas other accounts use password: **`pass123`**
 
 | Role | Username | Full Name / Description |
 |---|---|---|
@@ -178,5 +178,5 @@ Query profiling conducted on 10{,}006 student records and 50{,}040 enrollments d
 
 To reproduce the profiling results:
 ```bash
-bash scripts/profile_c.sh
+bash scripts/profile.sh
 ```

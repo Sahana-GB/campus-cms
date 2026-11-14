@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Person C + A: measure BEFORE and AFTER adding indexes. Run from anywhere:  ./scripts/profile_c.sh
-# Needs data/campus.db already filled with the big dataset (Person A's generate_data.py).
+# measure BEFORE and AFTER adding indexes. Run from anywhere:  ./scripts/profile.sh
+# Needs data/campus.db already filled with the big dataset (use generate_data.py).
 # Safe to re-run: it removes the indexes first so "before" is always without them.
 set -euo pipefail
 cd "$(dirname "$0")/.."

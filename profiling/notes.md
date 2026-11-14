@@ -1,4 +1,4 @@
-# Profiling notes (Person C, with Person A)
+# Profiling notes
 
 ## Setup
 - Data: 10,006 students (10,000 from `python/generate_data.py --count 10000 --seed 42`), 43 courses,
@@ -6,7 +6,7 @@
   `python/generate_enrollment_data.py`).
 - Tool: `python/profile_queries.py` runs the SQL that the Java app uses most (copied from `EnrollmentDAO`
   and `CgpaCalculator`), 30 repeats per query, fixed random seed, so before and after use the same samples.
-  `scripts/profile_c.sh` drops the profiling indexes, measures (`before.txt`), applies `db/indexes.sql`,
+  `../scripts/profile.sh` drops the profiling indexes, measures (`before.txt`), applies `db/indexes.sql`,
   runs `ANALYZE`, and measures again (`after.txt`).
 - Machine: WSL on a laptop, SQLite through Python's `sqlite3`. Times are averages in milliseconds; they do
   not include Swing or JDBC overhead.
@@ -64,5 +64,5 @@ worth it. The indexes were added only after measuring, which is why `schema.sql`
 bash scripts/setup.sh
 python3 python/generate_data.py --count 10000 --seed 42
 python3 python/generate_enrollment_data.py
-bash scripts/profile_c.sh
+bash scripts/profile.sh
 ```
