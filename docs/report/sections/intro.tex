@@ -1,0 +1,47 @@
+% Campus CMS project report -- Introduction
+% Include from main.tex with \input{sections/intro}
+\section{Introduction}
+\label{sec:introduction}
+
+\subsection{Background and Motivation}
+Campus academic administration involves multiple connected activities: maintaining student and faculty records, managing the course catalogue, processing enrollment requests, creating assessments, and recording grades. When these activities are handled separately, it becomes difficult to keep information consistent and provide timely access to students, faculty members, and administrators.
+
+The \textbf{Campus Course Management System (Campus CMS)} is a Java desktop application that organizes these operations around a shared SQLite database. It provides role-specific graphical interfaces for administrators, faculty members, and students, while keeping database access and application rules separate from the user interface.
+
+\subsection{Problem Statement}
+A course management application must represent relationships between users, students, faculty members, courses, enrollments, assignments, and grades. It must support common academic workflows without permitting duplicate enrollment records, invalid course data, unauthorized changes, or premature disclosure of draft grades. The project addresses these requirements through a centralized application backed by a relational database.
+
+\subsection{Project Objectives}
+The principal objectives are:
+\begin{itemize}
+    \item Provide login and role-based access for \texttt{ADMIN}, \texttt{FACULTY}, and \texttt{STUDENT} accounts.
+    \item Maintain student and faculty profiles, including account and record status.
+    \item Support course creation and management, faculty assignment, credits, capacity, semester, and course status.
+    \item Enable course browsing, enrollment requests, administrative approval or rejection, and course drops.
+    \item Support assignment and quiz records, grade entry, draft grades, and publication of grades.
+    \item Provide academic and enrollment reports, including CSV export where supported.
+    \item Preserve data integrity using relational constraints and application-level validation.
+    \item Evaluate and improve selected database queries using profiling and indexes.
+\end{itemize}
+
+\subsection{Scope}
+The application is organized around three roles. Administrators manage student and faculty records, course offerings, enrollment decisions, and administrative reports. Faculty members work with their assigned courses, assessments, and grades. Students browse courses, request enrollment, review their course information, and view assignments and published grades.
+
+The current database schema targets a \emph{single-semester} catalogue. Each course has a slot label, and a database constraint prevents two active courses from using the same slot. Slot labels are not mapped to clock times. Although prerequisite and detailed timetable functionality appeared in the initial project plan, the uploaded schema does not contain prerequisite or timetable tables; those features are not claimed as implemented here.
+
+\subsection{Technology Stack}
+\begin{itemize}
+    \item \textbf{Java 17 and Swing:} desktop application logic and graphical user interface.
+    \item \textbf{FlatLaf:} Swing look-and-feel dependency.
+    \item \textbf{SQLite and JDBC:} relational data storage and Java database connectivity.
+    \item \textbf{Maven:} dependency management, compilation, packaging, and test execution.
+    \item \textbf{JUnit 5:} automated Java tests.
+    \item \textbf{Python 3:} synthetic data generation, supplementary reporting, and query profiling.
+    \item \textbf{Bash:} scripts for setup, building, execution, testing, and profiling.
+\end{itemize}
+
+\subsection{High-Level Architecture}
+The source code is grouped into authentication, student management, course catalogue, enrollment, grading, reporting, and dashboard packages. Model classes represent domain entities. Data Access Objects (DAOs) encapsulate SQL operations; service classes implement application rules where appropriate; and Swing panels present data and invoke application operations. The shared database component manages connections to SQLite.
+
+\subsection{Report Organization}
+The following sections describe the database schema and relationships, the implementation of major application modules, testing, and performance profiling. Together they document the system as implemented in the project repository.

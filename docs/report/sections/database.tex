@@ -1,0 +1,68 @@
+% Campus CMS project report -- Database Design
+% Include from main.tex with \input{sections/database}
+\section{Database Design}
+\label{sec:database}
+
+\subsection{Database Overview}
+Campus CMS uses \textbf{SQLite} as its relational database, accessed from Java through JDBC. The base database definition is stored in \texttt{db/schema.sql}, sample records are stored in \texttt{db/seed.sql}, and additional performance indexes are defined in \texttt{db/indexes.sql}. The schema is designed for a single semester and contains seven principal tables: \texttt{users}, \texttt{students}, \texttt{faculty}, \texttt{courses}, \texttt{enrollments}, \texttt{assignments}, and \texttt{grades}.
+
+\subsection{Entities and Attributes}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|p{0.18\linewidth}|p{0.69\linewidth}|}
+\hline
+\textbf{Table} & \textbf{Important attributes} \\ \hline
+\texttt{users} & \texttt{user\_id} (PK), \texttt{username} (unique), \texttt{password\_hash}, \texttt{role}, \texttt{is\_active} \\ \hline
+\texttt{students} & \texttt{student\_id} (PK), \texttt{user\_id} (FK, unique), \texttt{roll\_number} (unique), \texttt{name}, \texttt{branch}, \texttt{year}, \texttt{email}, \texttt{status} \\ \hline
+\texttt{faculty} & \texttt{faculty\_id} (PK), \texttt{user\_id} (FK, unique), \texttt{name}, \texttt{department}, \texttt{email}, \texttt{status} \\ \hline
+\texttt{courses} & \texttt{course\_id} (PK), \texttt{code} (unique), \texttt{title}, \texttt{credits}, \texttt{capacity}, \texttt{semester}, \texttt{slot}, \texttt{faculty\_id} (FK, nullable), \texttt{status} \\ \hline
+\texttt{enrollments} & \texttt{enrollment\_id} (PK), \texttt{student\_id} (FK), \texttt{course\_id} (FK), \texttt{status}, \texttt{request\_date} \\ \hline
+\texttt{assignments} & \texttt{assignment\_id} (PK), \texttt{course\_id} (FK), \texttt{title}, \texttt{type}, \texttt{description}, \texttt{due\_date}, \texttt{max\_marks}, \texttt{weight}, \texttt{status}, \texttt{material\_path} \\ \hline
+\texttt{grades} & \texttt{grade\_id} (PK), \texttt{assignment\_id} (FK), \texttt{student\_id} (FK), \texttt{marks}, \texttt{feedback}, \texttt{published} \\ \hline
+\end{tabular}
+\caption{Core database tables and attributes. PK denotes primary key; FK denotes foreign key.}
+\label{tab:database-entities}
+\end{table}
+
+\subsection{Entity Relationships}
+A \texttt{users} record may have a corresponding \texttt{students} or \texttt{faculty} profile, linked by a unique foreign key. Administrator accounts need only a \texttt{users} record. One faculty member may be assigned to multiple courses, whereas each course has at most one assigned faculty member; the \texttt{faculty\_id} field may be null until assignment.
+
+Students and courses have a many-to-many relationship represented by \texttt{enrollments}. A course has multiple assignments or quizzes, and each assignment can have grade records for multiple students. The \texttt{grades} table also links each grade to the corresponding student. The pair \texttt{(student\_id, course\_id)} is unique in \texttt{enrollments}; the pair \texttt{(assignment\_id, student\_id)} is unique in \texttt{grades}.
+
+\subsection{Schema Constraints}
+\subsubsection{Account and Profile Constraints}
+The \texttt{users.role} column accepts only \texttt{ADMIN}, \texttt{FACULTY}, or \texttt{STUDENT}. The \texttt{is\_active} field is restricted to 0 or 1. Student and faculty statuses are restricted to \texttt{ACTIVE} or \texttt{INACTIVE}. Student year must be between 1 and 6. Usernames and student roll numbers must be unique.
+
+\subsubsection{Course Constraints}
+Course codes are unique, and credits and capacity must be positive integers. A course is either \texttt{ACTIVE} or \texttt{ARCHIVED}. Every course has a nonempty, trimmed, uppercase \texttt{slot} label. The partial unique index \texttt{idx\_courses\_unique\_active\_slot} prevents two \texttt{ACTIVE} courses from sharing a slot, while allowing archived courses to retain previously used labels. The schema does not represent actual meeting times or prerequisites.
+
+\subsubsection{Enrollment Constraints}
+Enrollment status must be one of \texttt{PENDING}, \texttt{APPROVED}, \texttt{REJECTED}, \texttt{DROPPED}, or \texttt{COMPLETED}. New records default to \texttt{PENDING}, with \texttt{request\_date} defaulting to the current date. A student-course pair can occur only once; a dropped enrollment can therefore be reactivated by updating its existing record instead of inserting a duplicate. Course-capacity checks and role permissions are implemented in application logic rather than as database \texttt{CHECK} constraints.
+
+\subsubsection{Assignment and Grade Constraints}
+Assignments have type \texttt{ASSIGNMENT} or \texttt{QUIZ}, positive maximum marks, and a weight between 0 and 100. Assignment status is \texttt{OPEN} or \texttt{CLOSED}; due dates are stored as ISO date strings. Grades must have nonnegative marks and a Boolean \texttt{published} flag. Draft grades have \texttt{published = 0}; published grades have \texttt{published = 1}. The application must verify that entered marks do not exceed the associated assignment's maximum, since a row-level SQLite \texttt{CHECK} constraint cannot compare values across these tables.
+
+\subsection{Foreign Keys and Referential Integrity}
+The schema defines foreign keys from \texttt{students} and \texttt{faculty} to \texttt{users}; from \texttt{courses} to \texttt{faculty}; from \texttt{enrollments} to \texttt{students} and \texttt{courses}; from \texttt{assignments} to \texttt{courses}; and from \texttt{grades} to \texttt{assignments} and \texttt{students}. SQLite foreign-key enforcement is enabled by \texttt{PRAGMA foreign\_keys = ON}; this setting must also be enabled for each database connection.
+
+\subsection{Indexes and Query Optimization}
+The schema automatically obtains indexes for primary keys and unique constraints. It also defines the partial unique active-course slot index. Five additional indexes are maintained in \texttt{db/indexes.sql} for profiling-based optimization:
+\begin{itemize}
+    \item \texttt{idx\_enrollments\_course\_status} on \texttt{enrollments(course\_id, status)} for course-level enrollment counts, rosters, and approvals.
+    \item \texttt{idx\_enrollments\_status} on \texttt{enrollments(status)} for administrative status counts and filtering.
+    \item \texttt{idx\_grades\_student} on \texttt{grades(student\_id)} for student-grade retrieval and CGPA calculations.
+    \item \texttt{idx\_assignments\_course} on \texttt{assignments(course\_id)} for course-level grade reports and transcript joins.
+    \item \texttt{idx\_students\_name} on \texttt{students(name COLLATE NOCASE)} for case-insensitive name-prefix searches.
+\end{itemize}
+These indexes are kept separate from the base schema so that query timings can be compared before and after optimization. The measurements and trade-offs are presented in the profiling section.
+
+\subsection{Database Setup and Maintenance}
+The repository provides \texttt{scripts/setup.sh} to create the database and load seed records. From the project root, the setup command is:
+\begin{verbatim}
+bash scripts/setup.sh
+\end{verbatim}
+By default, this creates \texttt{data/campus.db}. The script uses the \texttt{sqlite3} command-line tool if available, or Python's \texttt{sqlite3} module otherwise. Running the setup script replaces the existing local database and reloads the demonstration data. Because the schema intentionally recreates the tables, setup should not be used to preserve production records.
+
+\subsection{Design Considerations}
+The design separates login identities from student and faculty profiles, models many-to-many course enrollment through a junction table, and uses foreign keys to maintain relationships. Calculated values such as remaining seats and student CGPA are not stored as redundant columns; they are derived from enrollment and grade data. Database constraints protect record-level consistency, while application services handle workflow rules and authorization. The resulting design is appropriate for the implemented single-semester desktop application and can be extended if detailed timetable, prerequisite, or multi-semester support is introduced later.
