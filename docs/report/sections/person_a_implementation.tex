@@ -1,0 +1,84 @@
+% Person A: Dashboard Integration, UI Design System, and Synthetic Data Generator
+% Include from main.tex with \input{sections/person_a_implementation}
+\section{Dashboard Architecture and UI Design System (Person A)}
+\label{sec:ui-design-system}
+
+\subsection{Design Language and Philosophy}
+To modernize the desktop user experience and eliminate dated Swing aesthetics, a custom design system was implemented within the \texttt{com.campus.cms.core.ui} package. The design language adopts an ``Academic SaaS'' aesthetic inspired by modern enterprise web applications, leveraging the \textbf{FlatLaf} look-and-feel library while establishing a consistent token-driven UI layer.
+
+The visual system centers around:
+\begin{itemize}
+    \item \textbf{Color Palette:} An authoritative Indigo primary accent (\texttt{\#4F46E5}), deep slate text (\texttt{\#0F172A}), muted gray borders (\texttt{\#E2E8F0}), and light neutral backgrounds (\texttt{\#F4F6FA} for workspace canvases, \texttt{\#FFFFFF} for cards and panels).
+    \item \textbf{Typography:} System font scaling with explicit hierarchy: Display Header (22pt bold), Section Titles (16pt bold), Card Subtitles (12pt regular), and Body text (13pt regular).
+    \item \textbf{Spatial Metrics and Elevation:} Consistent 8pt grid metrics (spacings of 4, 8, 12, 16, 24, and 32 pixels), subtle border radii (8px for buttons and badges, 12px for cards), and 1px borders rather than heavy bevels.
+\end{itemize}
+
+\subsection{Reusable Component Architecture}
+The UI design system provides six core reusable components:
+\begin{enumerate}
+    \item \textbf{\texttt{Theme.java}:} Central source of truth for color constants, font tokens, borders, and dimensions.
+    \item \textbf{\texttt{Styles.java}:} Factory utility providing standardized button variants (\texttt{primary}, \texttt{secondary}, \texttt{destructive}), uniform table formatting with custom header renderers, scroll panes, text input styling, and action bars.
+    \item \textbf{\texttt{SidebarNav.java}:} Persistent navigation rail pinned to the left edge of all role portals. Features an institution brand banner, a personalized user avatar chip displaying the user's initials, active navigation pill tracking, and a pinned bottom logout button that safely clears sessions.
+    \item \textbf{\texttt{PageHeader.java}:} Standardized header component displaying a prominent section title with a descriptive muted subtitle across all dashboard views.
+    \item \textbf{\texttt{FilterBar.java} and \texttt{WrapLayout}:} A responsive filter toolbar component utilizing a custom flow layout that dynamically computes preferred height when filter fields wrap on narrow screens.
+    \item \textbf{\texttt{DashboardCard.java}:} Key performance indicator (KPI) metric cards featuring a 4px colored accent stripe (blue, emerald, red, amber, purple), large metric figures, descriptive subtitles, and subtle mouse-hover elevation feedback.
+    \item \textbf{\texttt{StatusBadge.java}:} Rounded pill badge component and table cell renderer for displaying entity statuses (e.g., \texttt{ACTIVE}, \texttt{INACTIVE}, \texttt{PENDING}, \texttt{APPROVED}) with semantically appropriate background and text tints.
+\end{enumerate}
+
+\subsection{Role-Based Dashboard Implementations}
+The application provides three synchronized, role-guarded portal dashboards:
+\begin{itemize}
+    \item \textbf{\texttt{AdminDashboard}:} Provides institutional oversight. Summarizes total, active, and inactive student accounts via \texttt{DashboardCard} widgets. Features a dynamic Quick Access action bar allowing administrators to quickly navigate between Student Management, Enrollment Management, Faculty Management, and Course Offerings without nested menus.
+    \item \textbf{\texttt{FacultyDashboard}:} Tailored for teaching staff. Displays assigned course load and student counts. Embeds the course roster, assessment management, and the grading interface.
+    \item \textbf{\texttt{StudentDashboard}:} Student portal displaying enrolled course counts, upcoming assignments, and published grades. Features course browsing, enrollment tracking, and profile management.
+\end{itemize}
+
+\subsection{Responsive Layout and Action Bar Optimization}
+During testing across varied display resolutions, traditional single-line toolbars caused button truncation. To eliminate this issue, \texttt{Styles.actionBar()} was introduced using a multi-row \texttt{WrapLayout}. Unlike standard \texttt{FlowLayout}, \texttt{WrapLayout} dynamically reports its preferred height based on the available width of the parent container, ensuring all action buttons remain fully visible and clickable without horizontal scrollbars or clipping.
+
+\section{Synthetic Student Data Generator (Person A)}
+\label{sec:synthetic-data}
+
+\subsection{Purpose and Motivation}
+Realistic performance evaluation of course enrollment systems requires testing at institutional scale (10{,}000+ students). Creating such volumes manually or relying on minimal test fixtures is infeasible. Person A developed a standalone, high-performance synthetic data generator in Python (\texttt{python/generate_data.py}) capable of synthesizing realistic student cohorts while ensuring strict database integrity.
+
+\subsection{Architecture and Schema Compliance}
+The generator directly interfaces with SQLite using standard library modules (\texttt{sqlite3}, \texttt{hashlib}, \texttt{secrets}, \texttt{argparse}) without external pip dependencies. It enforces strict compliance with \texttt{db/schema.sql}:
+\begin{itemize}
+    \item \textbf{Relational Integrity:} For each synthetic record, a parent entry is created in \texttt{users} with \texttt{role = 'STUDENT'} and \texttt{is\_active = 1}, followed by a child entry in \texttt{students} linked by \texttt{user\_id}.
+    \item \textbf{Unique Constraints:} Deterministic sequences guarantee uniqueness of usernames (\texttt{syn\_student\_000001}), roll numbers (\texttt{SYN2600001}), and institutional email addresses.
+    \item \textbf{Realistic Attribute Distribution:} Students are evenly distributed across allowed branches (\texttt{CSE}, \texttt{ECE}, \texttt{ME}, \texttt{CIVIL}) and academic years ($1$ to $4$) using realistic Indian first and last name combinations.
+\end{itemize}
+
+\subsection{PBKDF2 Hash Parity with Java}
+To ensure that all synthetically generated student accounts can log directly into the Java desktop application, the generator reproduces the exact cryptographic password hashing scheme used in \texttt{PasswordUtil.java}:
+\begin{equation}
+    \text{DerivedKey} = \text{PBKDF2-HMAC-SHA256}(\text{Password}, \text{Salt}, \text{iterations}=10{,}000, \text{key\_len}=32)
+\end{equation}
+The generator produces a 16-byte cryptographically secure random salt, computes the 256-bit derived key, and formats the output string as \texttt{hex(salt):hex(key)}, identical to the Java implementation. A shared default testing password (\texttt{pass123}) is derived and verified in automated tests.
+
+\subsection{Safety, Idempotency, and Transaction Management}
+\begin{itemize}
+    \item \textbf{Atomic Transactions:} Database insertions are batched within an explicit database transaction. In the event of any constraint failure, an immediate rollback is executed, leaving the database unmodified.
+    \item \textbf{Idempotency:} The generator detects existing synthetic records by prefix scanning. Repeated invocations with the same target count safely exit with zero redundant insertions.
+    \item \textbf{Dry-Run Mode:} A \texttt{--dry-run} flag permits validation of distribution metrics, foreign keys, and name generation in memory without writing to disk.
+\end{itemize}
+
+\subsection{Benchmarking and Scale Validation}
+The generator was benchmarked across various cohort sizes on a standard development machine (Table~\ref{tab:generator-benchmark}). Automated verification via \texttt{PRAGMA foreign\_key\_check} and \texttt{PRAGMA integrity\_check} confirmed zero violations across all runs.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|r|r|r|r|}
+\hline
+\textbf{Target Students} & \textbf{Users Created} & \textbf{Students Created} & \textbf{Execution Time} \\ \hline
+100 & 100 & 100 & 0.37 s \\ \hline
+1{,}000 & 1{,}000 & 1{,}000 & 4.06 s \\ \hline
+10{,}000 & 10{,}000 & 10{,}000 & 40.66 s \\ \hline
+\end{tabular}
+\caption{Synthetic student data generator performance benchmarks.}
+\label{tab:generator-benchmark}
+\end{table}
+
+The resulting 10{,}000-student database served as the foundational dataset for the query profiling and index optimization conducted jointly with Person C.

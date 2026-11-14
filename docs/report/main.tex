@@ -1,0 +1,80 @@
+\documentclass[11pt,a4paper]{article}
+
+% Essential packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{tabularx}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+
+% Hyperref configuration
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
+}
+
+% Code listing styling
+\lstset{
+    basicstyle=\small\ttfamily,
+    breaklines=true,
+    frame=single,
+    numbers=none,
+    backgroundcolor=\color{gray!10}
+}
+
+\title{
+    \textbf{Campus Course Management System (Campus CMS)} \\
+    \Large Architecture, Implementation, and Performance Profiling Report
+}
+
+\author{
+    \textbf{Team Campus CMS} \\
+    Person A: Dashboard Integration, UI Design System, Synthetic Data Generator \\
+    Person B: Faculty, Course Management, and Grading \\
+    Person C: Enrollment Management, Reporting, and Query Profiling
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Campus CMS is a single-semester course management desktop application built with Java 17, Swing, FlatLaf, and SQLite. The application organizes academic workflows around three distinct roles: Administrator, Faculty, and Student. This report presents the architectural design, relational schema, modular implementation, automated testing framework, and empirical query profiling results for the platform. Under an institutional-scale workload of 10{,}006 student accounts and over 50{,}000 enrollments, targeted database indexing achieved query speed-ups of up to 100$\times$, demonstrating high scalability and efficiency without compromising transactional integrity.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% Section 1: Introduction
+\input{sections/intro}
+
+% Section 2: Database Design
+\input{sections/database}
+
+% Section 3: Person A Implementation (UI Design System, Dashboards, Synthetic Data Generator)
+\input{sections/person_a_implementation}
+
+% Section 4: Person C Implementation (Enrollment and Reporting)
+\input{sections/implementation}
+
+% Section 5: Performance Profiling and Query Optimization (Joint A & C)
+\input{sections/profiling}
+
+% Section 6: Automated Testing & Verification
+\input{sections/testing}
+
+% Section 7: Conclusion & Future Work
+\input{sections/conclusion}
+
+\end{document}

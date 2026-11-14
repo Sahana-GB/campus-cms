@@ -1,0 +1,56 @@
+% Campus CMS project report -- Performance Profiling and Query Optimization
+% Joint work by Person A (Synthetic Data Generator) and Person C (Query Profiling)
+% Include from main.tex with \input{sections/profiling}
+\section{Performance Profiling and Query Optimization}
+\label{sec:profiling}
+
+\subsection{Profiling Methodology and Experimental Setup}
+To evaluate database performance under institutional load, the system was subjected to query profiling on a database populated with 10{,}006 students (10{,}000 generated via Person A's \texttt{python/generate_data.py}), 43 courses, 50{,}040 enrollments, 84 assignments, and 70{,}301 grades. 
+
+Profiling was orchestrated by \texttt{python/profile_queries.py} and executed via \texttt{scripts/profile_c.sh}. The tool benchmarks the most frequently executed SQL queries (extracted directly from \texttt{EnrollmentDAO} and \texttt{CgpaCalculator}) across 30 repeated runs with a fixed random seed to ensure identical query parameters between runs. Query timings represent raw database execution times in milliseconds, excluding GUI and JDBC overhead.
+
+\subsection{Bottleneck Identification}
+Before introducing optimization indexes, \texttt{EXPLAIN QUERY PLAN} revealed extensive full table scans (\texttt{SCAN enrollments}, \texttt{SCAN grades}, \texttt{SCAN students}) on critical paths. The primary bottleneck was the \textbf{Browse Courses} query, which required 146.49\,ms to execute. For each course offering, the query counts active approved enrollments; without an index on \texttt{course\_id} and \texttt{status}, each calculation scanned all 50{,}040 rows in the \texttt{enrollments} table. Because this view is the first screen encountered by students upon logging in, indexing was deemed essential.
+
+\subsection{Index Implementation}
+To resolve these bottlenecks without altering the base \texttt{db/schema.sql}, five targeted indexes were specified in \texttt{db/indexes.sql}:
+\begin{enumerate}
+    \item \texttt{CREATE INDEX idx\_enrollments\_course\_status ON enrollments(course\_id, status);}: Optimizes seat capacity checks, course roster queries, and Browse Courses filtering.
+    \item \texttt{CREATE INDEX idx\_enrollments\_status ON enrollments(status);}: Accelerates status aggregations displayed on administrator dashboard cards.
+    \item \texttt{CREATE INDEX idx\_grades\_student ON grades(student\_id);}: Enables fast retrieval of individual student grades for transcript generation and CGPA calculation.
+    \item \texttt{CREATE INDEX idx\_assignments\_course ON assignments(course\_id);}: Accelerates course-level grade reporting and assignment lookups.
+    \item \texttt{CREATE INDEX idx\_students\_name ON students(name COLLATE NOCASE);}: Optimizes case-insensitive student name prefix searches.
+\end{enumerate}
+
+Existing unique constraints on \texttt{UNIQUE (student\_id, course\_id)} and \texttt{UNIQUE (assignment\_id, student\_id)} already generate implicit B-tree indexes, so no additional indexes were required for direct student-course or assignment-student lookups.
+
+\subsection{Benchmark Results}
+Table~\ref{tab:profiling-results} summarizes average execution times across 30 iterations before and after applying \texttt{db/indexes.sql} and running \texttt{ANALYZE}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Query Description} & \textbf{Before (ms)} & \textbf{After (ms)} & \textbf{Speed-up} \\ \hline
+Seats taken (single course) & 3.122 & 0.059 & 53.0$\times$ \\ \hline
+Admin card: count by status & 3.442 & 0.274 & 12.6$\times$ \\ \hline
+Admin table: one course + PENDING & 3.717 & 0.806 & 4.6$\times$ \\ \hline
+Admin table: all PENDING & 34.019 & 30.478 & 1.1$\times$ \\ \hline
+Student: my enrollments & 0.051 & 0.034 & (already indexed) \\ \hline
+\textbf{Student: browse courses} & \textbf{146.494} & \textbf{1.983} & \textbf{74.0$\times$} \\ \hline
+\textbf{CGPA: grades of one student} & \textbf{2.512} & \textbf{0.025} & \textbf{100.0$\times$} \\ \hline
+Report: enrollment counts & 63.052 & 8.785 & 7.2$\times$ \\ \hline
+Report: grade averages & 98.840 & 99.633 & none \\ \hline
+Admin search: name prefix & 1.017 & 0.175 & 5.8$\times$ \\ \hline
+\end{tabular}
+\caption{Average query execution times before and after index optimization (SQLite, 10{,}006 students).}
+\label{tab:profiling-results}
+\end{table}
+
+\subsection{Analysis and Trade-offs}
+\begin{itemize}
+    \item \textbf{High-Impact Gains:} The Browse Courses query experienced a \textbf{74$\times$ speed-up} (reduced from 146.5\,ms to under 2\,ms). CGPA calculation achieved a \textbf{100$\times$ speed-up} (from 2.5\,ms to 0.025\,ms), allowing instantaneous calculation of student grade point averages during allocation.
+    \item \textbf{Unimproved Queries:} The \emph{Grade Averages} report must aggregate all 70{,}301 published grade records to compute class averages; because all rows must be read, index lookups cannot bypass the data scan. Similarly, the \emph{All Pending} query returns thousands of records where execution time is dominated by result set construction and serialization rather than search.
+    \item \textbf{Trade-off Assessment:} B-tree indexes introduce marginal overhead on \texttt{INSERT} and \texttt{UPDATE} operations and consume additional disk storage. Because academic course management systems are predominantly read-heavy (frequent course browsing, enrollment checks, and grade reviews compared to course creation), this trade-off is highly beneficial.
+\end{itemize}
