@@ -1,6 +1,5 @@
-# AI usage declaration: Person A (Dashboard Integration, UI Design System, and Synthetic Data Generator)
+# AI usage declaration: Kavya (Dashboard Integration, UI Design System, and Synthetic Data Generator)
 
-> Edit this so it is exactly true for you. Tick or change every [ ] item before submitting.
 
 ## Tool
 Antigravity / Gemini (Google DeepMind), used through the agentic IDE and chat interface.
