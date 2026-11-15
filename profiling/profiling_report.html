@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus CMS profiling report</title>
+<style>
+:root { --bg:#f4f5f9; --card:#ffffff; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+        --before:#e45756; --after:#4f46e5; --good:#15803d; --flat:#6b7280; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#0f172a; --card:#1e293b; --ink:#e5e7eb; --muted:#94a3b8; --line:#334155;
+          --before:#f87171; --after:#818cf8; --good:#4ade80; --flat:#94a3b8; } }
+* { box-sizing: border-box; }
+body { font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--ink);
+       margin: 0; padding: 28px 16px; line-height: 1.45; }
+main { max-width: 980px; margin: 0 auto; }
+h1 { font-size: 26px; margin: 0 0 4px; }
+p.sub { color: var(--muted); margin: 0 0 22px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.card .big { font-size: 28px; font-weight: 700; color: var(--after); }
+.card .small { color: var(--muted); font-size: 13px; }
+section.chart { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 8px; }
+h2 { font-size: 18px; margin: 0 0 4px; }
+.legend { display: flex; gap: 18px; font-size: 13px; color: var(--muted); margin: 6px 0 14px; flex-wrap: wrap; }
+.dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.row { display: grid; grid-template-columns: 220px 1fr 110px; gap: 12px; align-items: center;
+       padding: 10px 0; border-top: 1px solid var(--line); }
+.name { font-size: 14px; }
+.bars .line { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+.bar { height: 14px; border-radius: 3px; min-width: 3px; }
+.bar.before { background: var(--before); } .bar.after { background: var(--after); }
+.val { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.badge { font-size: 13px; font-weight: 600; text-align: right; }
+.badge.good { color: var(--good); } .badge.flat { color: var(--flat); }
+.note { color: var(--muted); font-size: 13px; margin: 10px 0 12px; }
+details { background: var(--card); border: 1px solid var(--line); border-radius: 10px; margin: 12px 0; padding: 10px 16px; }
+summary { cursor: pointer; font-weight: 600; }
+pre { background: var(--bg); padding: 10px 12px; border-radius: 6px; overflow-x: auto; font-size: 12.5px; }
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 720px) { .row { grid-template-columns: 1fr; } .badge { text-align: left; } .plans { grid-template-columns: 1fr; } }
+footer { color: var(--muted); font-size: 12.5px; margin: 18px 0; }
+</style></head><body><main>
+<h1>Campus CMS profiling report</h1>
+<p class="sub">Enrollment and reporting queries, before and after adding indexes. Data: 10,006 students, 43 courses, 50,040 enrollments, 84 assignments, 70,301 grades.</p>
+<div class="cards"><div class="card"><div class="big">10</div><div class="small">queries measured</div></div><div class="card"><div class="big">100x</div><div class="small">best speed-up: CGPA: grades of one student</div></div><div class="card"><div class="big">146.5 ms &rarr; 2.0 ms</div><div class="small">Browse Courses, the first student page</div></div></div>
+<section class="chart">
+<h2>Average query time (ms)</h2>
+<div class="legend"><span><span class="dot" style="background:var(--before)"></span>Before indexes</span>
+<span><span class="dot" style="background:var(--after)"></span>After indexes</span>
+<span>Bar length uses a log scale, so small and large times are both visible.</span></div>
+<div class="row"><div class="name">seats taken (one course)</div><div class="bars"><div class="line"><div class="bar before" style="width:58.0%"></div><span class="val">3.122 ms</span></div><div class="line"><div class="bar after" style="width:17.9%"></div><span class="val">0.059 ms</span></div></div><div class="badge good">52.9x faster</div></div>
+<div class="row"><div class="name">admin card: count by status</div><div class="bars"><div class="line"><div class="bar before" style="width:59.0%"></div><span class="val">3.442 ms</span></div><div class="line"><div class="bar after" style="width:33.4%"></div><span class="val">0.274 ms</span></div></div><div class="badge good">12.6x faster</div></div>
+<div class="row"><div class="name">admin table: one course + PENDING</div><div class="bars"><div class="line"><div class="bar before" style="width:59.8%"></div><span class="val">3.717 ms</span></div><div class="line"><div class="bar after" style="width:44.3%"></div><span class="val">0.806 ms</span></div></div><div class="badge good">4.6x faster</div></div>
+<div class="row"><div class="name">admin table: all PENDING</div><div class="bars"><div class="line"><div class="bar before" style="width:82.1%"></div><span class="val">34.019 ms</span></div><div class="line"><div class="bar after" style="width:81.0%"></div><span class="val">30.478 ms</span></div></div><div class="badge flat">no real change</div></div>
+<div class="row"><div class="name">student: my enrollments</div><div class="bars"><div class="line"><div class="bar before" style="width:16.5%"></div><span class="val">0.051 ms</span></div><div class="line"><div class="bar after" style="width:12.4%"></div><span class="val">0.034 ms</span></div></div><div class="badge good">1.5x faster</div></div>
+<div class="row"><div class="name">student: browse courses</div><div class="bars"><div class="line"><div class="bar before" style="width:96.9%"></div><span class="val">146.494 ms</span></div><div class="line"><div class="bar after" style="width:53.4%"></div><span class="val">1.983 ms</span></div></div><div class="badge good">73.9x faster</div></div>
+<div class="row"><div class="name">CGPA: grades of one student</div><div class="bars"><div class="line"><div class="bar before" style="width:55.8%"></div><span class="val">2.512 ms</span></div><div class="line"><div class="bar after" style="width:9.3%"></div><span class="val">0.025 ms</span></div></div><div class="badge good">100.5x faster</div></div>
+<div class="row"><div class="name">report: enrollment counts</div><div class="bars"><div class="line"><div class="bar before" style="width:88.3%"></div><span class="val">63.052 ms</span></div><div class="line"><div class="bar after" style="width:68.4%"></div><span class="val">8.785 ms</span></div></div><div class="badge good">7.2x faster</div></div>
+<div class="row"><div class="name">report: grade averages</div><div class="bars"><div class="line"><div class="bar before" style="width:92.9%"></div><span class="val">98.840 ms</span></div><div class="line"><div class="bar after" style="width:93.0%"></div><span class="val">99.633 ms</span></div></div><div class="badge flat">no real change</div></div>
+<div class="row"><div class="name">admin search: student name prefix</div><div class="bars"><div class="line"><div class="bar before" style="width:46.7%"></div><span class="val">1.017 ms</span></div><div class="line"><div class="bar after" style="width:28.9%"></div><span class="val">0.175 ms</span></div></div><div class="badge good">5.8x faster</div></div>
+</section>
+<p class="note">Grade averages must read every published grade, so no index can skip that work. The "all PENDING"
+list returns thousands of rows, so its time goes into building and sorting the result.</p>
+<h2>Query plans (SCAN = reads the whole table, SEARCH = uses an index)</h2>
+<details><summary>seats taken (one course)</summary><div class="plans"><div><b>Before</b><pre>    SCAN enrollments</pre></div><div><b>After</b><pre>    SEARCH enrollments USING COVERING INDEX idx_enrollments_course_status (course_id=? AND status=?)</pre></div></div></details>
+<details><summary>admin card: count by status</summary><div class="plans"><div><b>Before</b><pre>    SCAN enrollments</pre></div><div><b>After</b><pre>    SEARCH enrollments USING COVERING INDEX idx_enrollments_status (status=?)</pre></div></div></details>
+<details><summary>admin table: one course + PENDING</summary><div class="plans"><div><b>Before</b><pre>    SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+    SCAN e
+    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR RIGHT PART OF ORDER BY</pre></div><div><b>After</b><pre>    SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH e USING INDEX idx_enrollments_course_status (course_id=? AND status=?)
+    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR RIGHT PART OF ORDER BY</pre></div></div></details>
+<details><summary>admin table: all PENDING</summary><div class="plans"><div><b>Before</b><pre>    SCAN e
+    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR ORDER BY</pre></div><div><b>After</b><pre>    SCAN c USING INDEX sqlite_autoindex_courses_1
+    SEARCH e USING INDEX idx_enrollments_course_status (course_id=? AND status=?)
+    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR RIGHT PART OF ORDER BY</pre></div></div></details>
+<details><summary>student: my enrollments</summary><div class="plans"><div><b>Before</b><pre>    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH e USING INDEX sqlite_autoindex_enrollments_1 (student_id=?)
+    SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR ORDER BY</pre></div><div><b>After</b><pre>    SEARCH s USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH e USING INDEX sqlite_autoindex_enrollments_1 (student_id=?)
+    SEARCH c USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    USE TEMP B-TREE FOR ORDER BY</pre></div></div></details>
+<details><summary>student: browse courses</summary><div class="plans"><div><b>Before</b><pre>    SCAN c USING INDEX sqlite_autoindex_courses_1
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    CORRELATED SCALAR SUBQUERY 1
+    SCAN a
+    CORRELATED SCALAR SUBQUERY 2
+    SEARCH e USING INDEX sqlite_autoindex_enrollments_1 (student_id=? AND course_id=?)</pre></div><div><b>After</b><pre>    SCAN c USING INDEX sqlite_autoindex_courses_1
+    SEARCH f USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+    CORRELATED SCALAR SUBQUERY 1
+    SEARCH a USING COVERING INDEX idx_enrollments_course_status (course_id=? AND status=?)
+    CORRELATED SCALAR SUBQUERY 2
+    SEARCH e USING INDEX sqlite_autoindex_enrollments_1 (student_id=? AND course_id=?)</pre></div></div></details>
+<details><summary>CGPA: grades of one student</summary><div class="plans"><div><b>Before</b><pre>    SCAN g
+    SEARCH a USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH co USING INTEGER PRIMARY KEY (rowid=?)</pre></div><div><b>After</b><pre>    SEARCH g USING INDEX idx_grades_student (student_id=?)
+    SEARCH a USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH co USING INTEGER PRIMARY KEY (rowid=?)</pre></div></div></details>
+<details><summary>report: enrollment counts</summary><div class="plans"><div><b>Before</b><pre>    SCAN c
+    BLOOM FILTER ON e (course_id=?)
+    SEARCH e USING AUTOMATIC COVERING INDEX (course_id=?) LEFT-JOIN
+    USE TEMP B-TREE FOR ORDER BY</pre></div><div><b>After</b><pre>    SCAN c
+    SEARCH e USING COVERING INDEX idx_enrollments_course_status (course_id=?) LEFT-JOIN
+    USE TEMP B-TREE FOR ORDER BY</pre></div></div></details>
+<details><summary>report: grade averages</summary><div class="plans"><div><b>Before</b><pre>    CO-ROUTINE (subquery-1)
+    SCAN g
+    SEARCH a USING INTEGER PRIMARY KEY (rowid=?)
+    SEARCH co USING INTEGER PRIMARY KEY (rowid=?)
+    USE TEMP B-TREE FOR GROUP BY
+    SCAN (subquery-1)
+    USE TEMP B-TREE FOR GROUP BY
+    USE TEMP B-TREE FOR ORDER BY</pre></div><div><b>After</b><pre>    CO-ROUTINE (subquery-1)
+    SCAN co
+    SEARCH a USING INDEX idx_assignments_course (course_id=?)
+    SEARCH g USING INDEX sqlite_autoindex_grades_1 (assignment_id=?)
+    USE TEMP B-TREE FOR GROUP BY
+    SCAN (subquery-1)
+    USE TEMP B-TREE FOR GROUP BY
+    USE TEMP B-TREE FOR ORDER BY</pre></div></div></details>
+<details><summary>admin search: student name prefix</summary><div class="plans"><div><b>Before</b><pre>    SCAN students
+    USE TEMP B-TREE FOR ORDER BY</pre></div><div><b>After</b><pre>    SEARCH students USING INDEX idx_students_name (name&gt;? AND name&lt;?)
+    USE TEMP B-TREE FOR ORDER BY</pre></div></div></details>
+<footer>Generated by python/profile_html.py from profiling/before.txt and profiling/after.txt.</footer>
+</main></body></html>
