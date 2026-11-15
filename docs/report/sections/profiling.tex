@@ -21,10 +21,10 @@ To resolve these bottlenecks without altering the base \texttt{db/schema.sql}, f
 
 Existing unique constraints on \texttt{UNIQUE (student\_id, course\_id)} and \texttt{UNIQUE (assignment\_id, student\_id)} already generate implicit B-tree indexes, so no additional indexes were required for direct student-course or assignment-student lookups.
 
-\subsection{Benchmark Results}
-Table~\ref{tab:profiling-results} summarizes average execution times across 30 iterations before and after applying \texttt{db/indexes.sql} and running \texttt{ANALYZE}.
+\subsection{Benchmark Results and Visual Comparison}
+Table~\ref{tab:profiling-results} summarizes average execution times across 30 iterations before and after applying \texttt{db/indexes.sql} and running \texttt{ANALYZE}. Figures~\ref{fig:profiling-latency-chart} and~\ref{fig:profiling-speedup-chart} visually compare the latency reduction and speed-up factors achieved across the indexed queries.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{|l|r|r|r|}
@@ -44,6 +44,95 @@ Admin search: name prefix & 1.017 & 0.175 & 5.8$\times$ \\ \hline
 \caption{Average query execution times before and after index optimization (SQLite, 10{,}006 students).}
 \label{tab:profiling-results}
 \end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[xscale=0.055, yscale=0.68, font=\footnotesize]
+    \fill[red!65!black] (20, 7.3) rectangle (25, 7.65);
+    \node[right] at (25.5, 7.47) {Before Indexing (ms)};
+    \fill[green!60!black] (80, 7.3) rectangle (85, 7.65);
+    \node[right] at (85.5, 7.47) {After Indexing (ms)};
+
+    \node[left] at (0, 6.2) {Browse courses};
+    \fill[red!65!black] (0, 6.25) rectangle (146.5, 6.55);
+    \node[right] at (147.5, 6.4) {146.49\,ms};
+    \fill[green!60!black] (0, 5.85) rectangle (2.0, 6.15);
+    \node[right] at (3.0, 6.0) {\textbf{1.98\,ms}};
+
+    \node[left] at (0, 5.0) {Report: enrollment counts};
+    \fill[red!65!black] (0, 5.05) rectangle (63.1, 5.35);
+    \node[right] at (64.1, 5.2) {63.05\,ms};
+    \fill[green!60!black] (0, 4.65) rectangle (8.8, 4.95);
+    \node[right] at (9.8, 4.8) {\textbf{8.79\,ms}};
+
+    \node[left] at (0, 3.8) {Course + PENDING filter};
+    \fill[red!65!black] (0, 3.85) rectangle (3.72, 4.15);
+    \node[right] at (4.7, 4.0) {3.72\,ms};
+    \fill[green!60!black] (0, 3.45) rectangle (0.81, 3.75);
+    \node[right] at (1.8, 3.6) {\textbf{0.81\,ms}};
+
+    \node[left] at (0, 2.6) {Admin status count};
+    \fill[red!65!black] (0, 2.65) rectangle (3.44, 2.95);
+    \node[right] at (4.4, 2.8) {3.44\,ms};
+    \fill[green!60!black] (0, 2.25) rectangle (0.35, 2.55);
+    \node[right] at (1.4, 2.4) {\textbf{0.27\,ms}};
+
+    \node[left] at (0, 1.4) {Seats taken (1 course)};
+    \fill[red!65!black] (0, 1.45) rectangle (3.12, 1.75);
+    \node[right] at (4.1, 1.6) {3.12\,ms};
+    \fill[green!60!black] (0, 1.05) rectangle (0.3, 1.35);
+    \node[right] at (1.3, 1.2) {\textbf{0.059\,ms}};
+
+    \node[left] at (0, 0.2) {CGPA (1 student)};
+    \fill[red!65!black] (0, 0.25) rectangle (2.51, 0.55);
+    \node[right] at (3.5, 0.4) {2.51\,ms};
+    \fill[green!60!black] (0, -0.15) rectangle (0.25, 0.15);
+    \node[right] at (1.3, 0.0) {\textbf{0.025\,ms}};
+
+    \draw[gray!70, ->] (0, -0.45) -- (165, -0.45) node[right] {ms};
+    \draw[gray!70] (0, -0.45) -- (0, 6.8);
+\end{tikzpicture}
+\caption{Before vs.\ After query execution latency (in milliseconds) across indexed queries.}
+\label{fig:profiling-latency-chart}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[xscale=0.082, yscale=0.58, font=\footnotesize]
+    \node[left] at (0, 6.0) {CGPA of one student};
+    \fill[blue!65!black] (0, 5.75) rectangle (100.0, 6.25);
+    \node[right] at (101.0, 6.0) {\textbf{100.0$\times$}};
+
+    \node[left] at (0, 5.0) {Student: browse courses};
+    \fill[blue!65!black] (0, 4.75) rectangle (74.0, 5.25);
+    \node[right] at (75.0, 5.0) {\textbf{74.0$\times$}};
+
+    \node[left] at (0, 4.0) {Seats taken (single course)};
+    \fill[blue!65!black] (0, 3.75) rectangle (53.0, 4.25);
+    \node[right] at (54.0, 4.0) {\textbf{53.0$\times$}};
+
+    \node[left] at (0, 3.0) {Admin card: count by status};
+    \fill[teal!75!black] (0, 2.75) rectangle (12.6, 3.25);
+    \node[right] at (13.6, 3.0) {12.6$\times$};
+
+    \node[left] at (0, 2.0) {Report: enrollment counts};
+    \fill[teal!75!black] (0, 1.75) rectangle (7.2, 2.25);
+    \node[right] at (8.2, 2.0) {7.2$\times$};
+
+    \node[left] at (0, 1.0) {Admin search: name prefix};
+    \fill[teal!75!black] (0, 0.75) rectangle (5.8, 1.25);
+    \node[right] at (6.8, 1.0) {5.8$\times$};
+
+    \node[left] at (0, 0.0) {Admin table: course + PENDING};
+    \fill[teal!75!black] (0, -0.25) rectangle (4.6, 0.25);
+    \node[right] at (5.6, 0.0) {4.6$\times$};
+
+    \draw[gray!70, ->] (0, -0.6) -- (112, -0.6) node[right] {Speed-up ($\times$)};
+    \draw[gray!70] (0, -0.6) -- (0, 6.5);
+\end{tikzpicture}
+\caption{Relative query speed-up factors achieved after applying \texttt{db/indexes.sql}.}
+\label{fig:profiling-speedup-chart}
+\end{figure}
 
 \subsection{Analysis and Trade-offs}
 \begin{itemize}

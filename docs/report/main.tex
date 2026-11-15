@@ -5,6 +5,7 @@
 \usepackage{lmodern}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
 \usepackage{tabularx}
@@ -12,6 +13,8 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit, backgrounds}
 
 \hypersetup{
     colorlinks=true,
@@ -48,7 +51,18 @@
 \maketitle
 
 \begin{abstract}
-Campus CMS is a single-semester course management desktop application built with Java 17, Swing, FlatLaf, and SQLite. The application organizes academic workflows around three distinct roles: Administrator, Faculty, and Student. This report presents the architectural design, relational schema, modular implementation, automated testing framework, and empirical query profiling results for the platform. Under an institutional-scale workload of 10{,}006 student accounts and over 50{,}000 enrollments, targeted database indexing achieved query speed-ups of up to 100$\times$, demonstrating high scalability and efficiency without compromising transactional integrity.
+\noindent\textbf{Problem:} Academic course administration spans student and faculty record-keeping, course scheduling, enrollment approvals, and assessment grading. Handling these workflows in disconnected tools leads to data inconsistencies, duplicate enrollments, unauthorized access, and severe query bottlenecks at institutional scale.
+
+\medskip
+\noindent\textbf{Solution:} \textbf{Campus CMS} is a single-semester desktop course management application built with Java 17, Swing (FlatLaf), and SQLite 3. It enforces role-based access control across dedicated \texttt{ADMIN}, \texttt{FACULTY}, and \texttt{STUDENT} portals, separates concerns across DAO, Service, and UI Design System layers, and pairs with Python 3 CLI utilities for deterministic synthetic data generation and query profiling.
+
+\medskip
+\noindent\textbf{Major Results:}
+\begin{itemize}
+    \item \textbf{Scalable Data Synthesis:} Generates 10{,}000+ schema-compliant student accounts with full Java PBKDF2-HMAC-SHA256 password parity in $\sim$40.7 seconds.
+    \item \textbf{Query Optimization:} Adding five targeted B-tree indexes on a dataset of 10{,}006 students and 50{,}040 enrollments accelerated \emph{Browse Courses} by \textbf{74$\times$} (146.5\,ms $\rightarrow$ 1.98\,ms) and \emph{CGPA Calculation} by \textbf{100$\times$} (2.51\,ms $\rightarrow$ 0.025\,ms).
+    \item \textbf{Verified Reliability:} Passes \textbf{147 automated tests} (136 JUnit 5 tests and 11 Python unit tests) with 0 failures across all modules.
+\end{itemize}
 \end{abstract}
 
 \tableofcontents

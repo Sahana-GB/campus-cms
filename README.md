@@ -6,7 +6,7 @@ A desktop-based academic course management system built with Java 17, Swing, Fla
 
 ## Key Features
 
-### Administrator Portal
+### Administrit ator Portal
 - **Dashboard & KPIs**: Overview cards displaying total, active, and inactive student accounts with dynamic Quick Access navigation.
 - **Student & Faculty Management**: Add, update, activate/deactivate, and inspect student and faculty records.
 - **Course Catalog Management**: Create and configure course offerings, assign faculty members, set credit weights and enrollment capacities. Active course slot uniqueness is strictly enforced.
@@ -86,6 +86,7 @@ campus-cms/
 │   │   └── Grading & Assessment Integration,Testing.md
 │   └── report/                     # LaTeX project report and modular section source files
 │       ├── main.tex                # Master report document
+│       ├── figures/                # ER diagram and dashboard screenshots included in the report
 │       └── sections/               # intro.tex, database.tex, implementation.tex, profiling.tex, testing.tex, conclusion.tex
 └── scripts/
     ├── setup.sh                    # Re-creates data/campus.db from schema.sql and seed.sql

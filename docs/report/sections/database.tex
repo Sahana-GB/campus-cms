@@ -5,10 +5,12 @@
 Campus CMS uses \textbf{SQLite} as its relational database, accessed from Java through JDBC. The base database definition is stored in \texttt{db/schema.sql}, sample records are stored in \texttt{db/seed.sql}, and additional performance indexes are defined in \texttt{db/indexes.sql}. The schema is designed for a single semester and contains seven principal tables: \texttt{users}, \texttt{students}, \texttt{faculty}, \texttt{courses}, \texttt{enrollments}, \texttt{assignments}, and \texttt{grades}.
 
 \subsection{Entities and Attributes}
-\begin{table}[htbp]
+Table~\ref{tab:database-entities} summarizes the seven core tables in the schema along with their primary keys (PK), foreign keys (FK), and principal domain attributes.
+
+\begin{table}[H]
 \centering
 \small
-\begin{tabular}{|p{0.18\linewidth}|p{0.69\linewidth}|}
+\begin{tabular}{|p{0.18\linewidth}|p{0.72\linewidth}|}
 \hline
 \textbf{Table} & \textbf{Important attributes} \\ \hline
 \texttt{users} & \texttt{user\_id} (PK), \texttt{username} (unique), \texttt{password\_hash}, \texttt{role}, \texttt{is\_active} \\ \hline
@@ -26,7 +28,14 @@ Campus CMS uses \textbf{SQLite} as its relational database, accessed from Java t
 \subsection{Entity Relationships}
 A \texttt{users} record may have a corresponding \texttt{students} or \texttt{faculty} profile, linked by a unique foreign key. Administrator accounts need only a \texttt{users} record. One faculty member may be assigned to multiple courses, whereas each course has at most one assigned faculty member; the \texttt{faculty\_id} field may be null until assignment.
 
-Students and courses have a many-to-many relationship represented by \texttt{enrollments}. A course has multiple assignments or quizzes, and each assignment can have grade records for multiple students. The \texttt{grades} table also links each grade to the corresponding student. The pair \texttt{(student\_id, course\_id)} is unique in \texttt{enrollments}; the pair \texttt{(assignment\_id, student\_id)} is unique in \texttt{grades}.
+Students and courses have a many-to-many relationship represented by \texttt{enrollments}. A course has multiple assignments or quizzes, and each assignment can have grade records for multiple students. The \texttt{grades} table also links each grade to the corresponding student. The pair \texttt{(student\_id, course\_id)} is unique in \texttt{enrollments}; the pair \texttt{(assignment\_id, student\_id)} is unique in \texttt{grades}. Figure~\ref{fig:er-diagram} presents the complete Entity-Relationship (ER) diagram of the database schema.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/er_diagram.png}
+\caption{Entity-Relationship (ER) diagram of the Campus CMS database schema.}
+\label{fig:er-diagram}
+\end{figure}
 
 \subsection{Schema Constraints}
 \subsubsection{Account and Profile Constraints}

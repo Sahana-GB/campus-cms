@@ -11,14 +11,20 @@ Key achievements delivered across the collaborative development include:
     \item Complete course management, assignment grading workflows with automated student roster population, and draft/published grade controls.
     \item A resilient enrollment lifecycle featuring capacity tracking, CGPA-based automatic allocation, and CSV report exports.
     \item Empirical query optimization demonstrating up to a 100$\times$ query speed-up on institutional-scale datasets through five targeted indexes.
-    \item High software reliability guaranteed by 136 passing JUnit tests and 11 passing Python tests.
+    \item High software reliability guaranteed by 136 passing JUnit tests and 11 passing Python tests (147 total automated tests).
 \end{enumerate}
 
-\subsection{Future Enhancements}
-Potential extensions identified for future iterations include:
+\subsection{Prioritized Future Work}
+Potential extensions for subsequent iterations are prioritized into short-term operational enhancements and long-term architectural evolutions:
+
+\subsubsection{Short-Term Enhancements (High Priority)}
 \begin{itemize}
-    \item \textbf{Student Online Submissions:} Expanding the assignment module to include a \texttt{submissions} table supporting digital file uploads and submission timestamps.
-    \item \textbf{Multi-Semester Scheduling:} Upgrading the catalog schema to support recurring academic terms, historical GPA trends, and multi-semester degree audits.
-    \item \textbf{Direct Timetable Clash Detection:} Introducing explicit timeslot-to-clock mappings with automated clash resolution for overlapping lectures and lab sessions.
-    \item \textbf{Role-Based Paging:} Implementing server-side cursor pagination for administrative views handling tens of thousands of records simultaneously.
+    \item \textbf{Student Online Assignment Submissions:} Expanding the grading module with a dedicated \texttt{submissions} table to support student file uploads, submission timestamps, and late-submission status tracking directly within \texttt{StudentDashboard}.
+    \item \textbf{Cursor-Based Table Pagination:} Introducing server-side/DAO pagination (\texttt{LIMIT}/\texttt{OFFSET} or keyset pagination) on administrative tables such as \emph{All Pending Enrollments} and the 10{,}000-student directory to reduce Swing table rendering overhead.
+\end{itemize}
+
+\subsubsection{Long-Term Roadmap (Architectural Evolution)}
+\begin{itemize}
+    \item \textbf{Multi-Semester Scheduling and Prerequisite Graphs:} Extending the relational schema to model multiple academic terms, historical term-by-term GPA progression, and a \texttt{prerequisites} junction table verified during enrollment requests.
+    \item \textbf{Clock-Mapped Timetable Clash Detection:} Replacing abstract single-character slot labels with explicit day-of-week and clock-interval schedules to support multi-hour laboratory sessions and fine-grained conflict resolution.
 \end{itemize}

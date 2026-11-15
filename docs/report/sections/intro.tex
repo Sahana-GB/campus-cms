@@ -39,7 +39,44 @@ The current database schema targets a \emph{single-semester} catalogue. Each cou
 \end{itemize}
 
 \subsection{High-Level Architecture}
-The source code is grouped into authentication, student management, course catalogue, enrollment, grading, reporting, and dashboard packages. Model classes represent domain entities. Data Access Objects (DAOs) encapsulate SQL operations; service classes implement application rules where appropriate; and Swing panels present data and invoke application operations. The shared database component manages connections to SQLite.
+The source code is grouped into authentication, student management, course catalogue, enrollment, grading, reporting, and dashboard packages. Model classes represent domain entities. Data Access Objects (DAOs) encapsulate SQL operations; service classes implement application rules where appropriate; and Swing panels present data and invoke application operations. The shared database component manages connections to SQLite. Figure~\ref{fig:system-architecture} illustrates the four-tier layered architecture of Campus CMS.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.55cm,
+    tier/.style={rectangle, rounded corners=4pt, draw=blue!60!black, thick, fill=blue!4, text width=13.8cm, align=center, inner sep=7pt, font=\small},
+    subbox/.style={rectangle, rounded corners=2pt, draw=gray!70!black, fill=white, inner sep=4pt, font=\footnotesize\ttfamily},
+    arrow/.style={-{Stealth[length=2.5mm]}, thick, draw=blue!60!black}
+]
+    \node[tier] (ui) {
+        \textbf{Presentation Tier (Java Swing + FlatLaf UI Design System)}\\[3pt]
+        \texttt{LoginFrame} $\cdot$ \texttt{AdminDashboard} $\cdot$ \texttt{FacultyDashboard} $\cdot$ \texttt{StudentDashboard}\\
+        \texttt{core.ui}: \texttt{Theme}, \texttt{Styles}, \texttt{SidebarNav}, \texttt{PageHeader}, \texttt{FilterBar}, \texttt{DashboardCard}, \texttt{StatusBadge}
+    };
+
+    \node[tier, below=of ui, fill=violet!5!white] (service) {
+        \textbf{Application Service \& Session Tier (Business Rules \& RBAC Guards)}\\[3pt]
+        \texttt{Session} (\texttt{Role}) $\cdot$ \texttt{AuthService} (\texttt{PasswordUtil}) $\cdot$ \texttt{CourseService} $\cdot$ \texttt{EnrollmentService} (\texttt{CgpaCalculator}) $\cdot$ \texttt{GradeService} $\cdot$ \texttt{CsvExporter}
+    };
+
+    \node[tier, below=of service, fill=teal!5!white] (dao) {
+        \textbf{Data Access Tier (DAO Layer + SQLite JDBC)}\\[3pt]
+        \texttt{Database} $\cdot$ \texttt{Settings} $\cdot$ \texttt{UserDAO} $\cdot$ \texttt{StudentDAO} $\cdot$ \texttt{FacultyDAO} $\cdot$ \texttt{CourseDAO} $\cdot$ \texttt{EnrollmentDAO} $\cdot$ \texttt{AssignmentDAO} $\cdot$ \texttt{GradeDAO}
+    };
+
+    \node[tier, below=of dao, fill=gray!10] (db) {
+        \textbf{Relational Persistence \& Python Analytics Tier}\\[3pt]
+        \textbf{SQLite 3 (\texttt{data/campus.db})}: \texttt{db/schema.sql}, \texttt{db/seed.sql}, \texttt{db/indexes.sql} $\quad\longleftrightarrow\quad$ \textbf{Python CLI}: \texttt{generate\_data.py}, \texttt{profile\_queries.py}, \texttt{reports.py}
+    };
+
+    \draw[arrow, <->] (ui.south) -- (service.north);
+    \draw[arrow, <->] (service.south) -- (dao.north);
+    \draw[arrow, <->] (dao.south) -- (db.north);
+\end{tikzpicture}
+\caption{Four-tier system architecture of the Campus Course Management System.}
+\label{fig:system-architecture}
+\end{figure}
 
 \subsection{Report Organization}
-The following sections describe the database schema and relationships, the implementation of major application modules, testing, and performance profiling. Together they document the system as implemented in the project repository.
+The following sections describe the database schema and relationships, the implementation of major application modules, performance profiling, automated testing, and future directions. Together they document the system as implemented in the project repository.

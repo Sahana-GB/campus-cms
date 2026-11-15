@@ -11,18 +11,31 @@ Testing guidelines strictly enforce:
     \item \textbf{Edge Case Coverage:} Validation includes duplicate entity detection, constraint boundary values (e.g., negative course credits, year out-of-range), and transaction rollback on insertion failure.
 \end{enumerate}
 
-\subsection{Java Test Suite (JUnit 5)}
-The Java test suite comprises \textbf{136 automated test cases} across all architectural tiers:
-\begin{itemize}
-    \item \textbf{Authentication and Session (\texttt{com.campus.cms.auth}):} Validates password hashing and verification in \texttt{PasswordUtilTest}, role permission checks in \texttt{AuthServiceTest}, user queries in \texttt{UserDAOTest}, profile password modifications in \texttt{ProfilePanelTest}, and login window state transitions in \texttt{LoginFrameTest}.
-    \item \textbf{Student Management (\texttt{com.campus.cms.students}):} Tests CRUD lifecycle, roll number uniqueness, email constraints, and active/inactive state transitions in \texttt{StudentDAOTest} and \texttt{StudentsPanelTest}.
-    \item \textbf{Course Catalog and Faculty (\texttt{com.campus.cms.catalog}):} Validates active slot conflict detection, course capacity enforcement, and faculty assignment in \texttt{CatalogDAOTest}.
-    \item \textbf{Enrollment and Reports (\texttt{com.campus.cms.enrollment}):} Covers course request approval/rejection workflows, CGPA-based automatic seat allocation, drop mechanics, CSV report generation, and enrollment period toggle states in \texttt{EnrollmentServiceTest}, \texttt{EnrollmentPeriodAndReportsTest}, and \texttt{CsvExporterTest}.
-    \item \textbf{Grading and Assessment (\texttt{com.campus.cms.grading}):} Validates assignment creation, enrolled student auto-population in the grading table, draft score persistence, and grade publication in \texttt{GradesPanelTest}.
-    \item \textbf{Dashboards and Core UI (\texttt{com.campus.cms.dashboard}, \texttt{com.campus.cms.core}):} Verifies proper component initialization, greeting derivation, action bar wrapping, and card switching in \texttt{AdminDashboardTest}, \texttt{FacultyDashboardTest}, \texttt{StudentDashboardTest}, and \texttt{DashboardCardTest}.
-\end{itemize}
+\subsection{Module-Wise Test Coverage Summary}
+Table~\ref{tab:test-coverage-summary} provides a complete breakdown of all \textbf{147 automated tests} (136 Java JUnit 5 tests and 11 Python \texttt{unittest} tests) across the project modules.
 
-All 136 tests execute via Maven and pass with zero failures:
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|p{0.22\linewidth}|p{0.31\linewidth}|r|p{0.25\linewidth}|c|}
+\hline
+\textbf{Module / Package} & \textbf{Test Classes / Suites} & \textbf{Tests} & \textbf{Primary Verification Scope} & \textbf{Status} \\ \hline
+Authentication (\texttt{auth}) & \texttt{AuthServiceTest}, \texttt{LoginFrameTest}, \texttt{PasswordUtilTest}, \texttt{ProfilePanelTest}, \texttt{UserDAOTest} & 42 & PBKDF2 hashing, login state routing, password changes, user CRUD & 42 / 42 Pass \\ \hline
+Core \& UI (\texttt{core}) & \texttt{SessionTest}, \texttt{DashboardCardTest} & 11 & Singleton session RBAC checks, KPI metric card state updates & 11 / 11 Pass \\ \hline
+Student Management (\texttt{students}) & \texttt{StudentDAOTest}, \texttt{StudentsPanelTest} & 24 & Roll number uniqueness, branch/year bounds, UI filtering \& CRUD & 24 / 24 Pass \\ \hline
+Course Catalog \& Faculty (\texttt{catalog}) & \texttt{CatalogDAOTest} & 6 & Active slot uniqueness, capacity rules, faculty assignment & 6 / 6 Pass \\ \hline
+Enrollment \& Reports (\texttt{enrollment}) & \texttt{EnrollmentServiceTest}, \texttt{EnrollmentPeriodAndReportsTest}, \texttt{CsvExporterTest} & 22 & Request/approve/drop rules, CGPA auto-allocation, CSV export & 22 / 22 Pass \\ \hline
+Grading (\texttt{grading}) & \texttt{GradesPanelTest} & 3 & Enrolled student auto-population, draft vs.\ published grades & 3 / 3 Pass \\ \hline
+Role Dashboards (\texttt{dashboard}) & \texttt{AdminDashboardTest}, \texttt{FacultyDashboardTest}, \texttt{StudentDashboardTest} & 28 & Role guards, sidebar card navigation, KPI \& profile wiring & 28 / 28 Pass \\ \hline
+Synthetic Data (\texttt{python}) & \texttt{test\_generate\_data.py} & 11 & 10k scale synthesis, Java PBKDF2 parity, FK \& rollback safety & 11 / 11 Pass \\ \hline
+\textbf{Total} & \textbf{17 Java Classes + 1 Python Suite} & \textbf{147} & \textbf{End-to-End System Verification} & \textbf{100\% Pass} \\ \hline
+\end{tabular}
+\caption{Module-wise automated test coverage summary across Java and Python test suites.}
+\label{tab:test-coverage-summary}
+\end{table}
+
+\subsection{Java Test Suite (JUnit 5)}
+All 136 Java tests execute via Maven and pass with zero failures:
 \begin{verbatim}
 mvn test
 Results: Tests run: 136, Failures: 0, Errors: 0, Skipped: 0

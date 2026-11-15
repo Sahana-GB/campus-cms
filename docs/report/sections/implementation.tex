@@ -24,12 +24,33 @@ The UI design system provides seven core reusable components:
 \end{enumerate}
 
 \subsection{Role-Based Dashboard Implementations}
-The application provides three synchronized, role-guarded portal dashboards:
+The application provides three synchronized, role-guarded portal dashboards (shown in Figures~\ref{fig:admin-dashboard}, \ref{fig:faculty-dashboard}, and \ref{fig:student-dashboard}):
 \begin{itemize}
     \item \textbf{\texttt{AdminDashboard}:} Provides institutional oversight. Summarizes total, active, and inactive student accounts via \texttt{DashboardCard} widgets. Features a dynamic Quick Access action bar allowing administrators to quickly navigate between Student Management, Enrollment Management, Faculty Management, and Course Offerings without nested menus.
     \item \textbf{\texttt{FacultyDashboard}:} Tailored for teaching staff. Displays assigned course load and student counts. Embeds the course roster, assessment management, and the grading interface.
-    \item \textbf{\texttt{StudentDashboard}:} Student portal displaying enrolled course counts, upcoming assignments, and published grades. Features course browsing, enrollment tracking, and profile management.
+    \item \textbf{\texttt{StudentDashboard}:} Student portal displaying enrolled course counts, upcoming assignments, published grades, and real-time CGPA calculation. Features course browsing, enrollment tracking, and profile management.
 \end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/admin_dashboard.png}
+\caption{Administrator Portal (\texttt{AdminDashboard}) displaying KPI metric cards, enrollment period status badge, and wrapped Quick Access action bar.}
+\label{fig:admin-dashboard}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/faculty_dashboard.png}
+\caption{Faculty Portal (\texttt{FacultyDashboard}) showing personalized avatar chip, assigned course metrics, and assessment summary.}
+\label{fig:faculty-dashboard}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/student_dashboard.png}
+\caption{Student Portal (\texttt{StudentDashboard}) showing live CGPA badge, course/task KPI cards, and Quick Access navigation.}
+\label{fig:student-dashboard}
+\end{figure}
 
 \subsection{Responsive Layout and Action Bar Optimization}
 During testing across varied display resolutions, traditional single-line toolbars caused button truncation. To eliminate this issue, \texttt{Styles.actionBar()} was introduced using a multi-row \texttt{WrapLayout}. Unlike standard \texttt{FlowLayout}, \texttt{WrapLayout} dynamically reports its preferred height based on the available width of the parent container, ensuring all action buttons remain fully visible and clickable without horizontal scrollbars or clipping.
@@ -38,7 +59,29 @@ During testing across varied display resolutions, traditional single-line toolba
 \label{sec:synthetic-data}
 
 \subsection{Purpose and Motivation}
-Realistic performance evaluation of course enrollment systems requires testing at institutional scale (10{,}000+ students). Creating such volumes manually or relying on minimal test fixtures is infeasible. A standalone, high-performance synthetic data generator was developed in Python (\texttt{python/generate\_data.py}) capable of synthesizing realistic student cohorts while ensuring strict database integrity.
+Realistic performance evaluation of course enrollment systems requires testing at institutional scale (10{,}000+ students). Creating such volumes manually or relying on minimal test fixtures is infeasible. A standalone, high-performance synthetic data generator was developed in Python (\texttt{python/generate\_data.py}) capable of synthesizing realistic student cohorts while ensuring strict database integrity. Figure~\ref{fig:generator-workflow} depicts the end-to-end execution workflow of the synthetic data generator.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.45cm,
+    stage/.style={rectangle, rounded corners=4pt, draw=blue!65!black, thick, fill=blue!5, text width=2.45cm, minimum height=1.7cm, align=center, font=\footnotesize},
+    arrow/.style={-{Stealth[length=2.2mm]}, thick, draw=blue!65!black}
+]
+    \node[stage] (cli) {\textbf{1. CLI Input}\\Parse \texttt{--count}, \texttt{--seed}, \texttt{--db}, \texttt{--dry-run}};
+    \node[stage, right=of cli, fill=teal!6] (idem) {\textbf{2. Idempotency}\\Scan existing \texttt{syn\_student\_*} count \& delta};
+    \node[stage, right=of idem, fill=violet!6] (synth) {\textbf{3. Synthesis}\\Generate unique Roll, Email, Branch \& Year};
+    \node[stage, right=of synth, fill=orange!8] (hash) {\textbf{4. PBKDF2 Hash}\\10k iterations, 16B salt, 32B SHA-256 key};
+    \node[stage, right=of hash, fill=green!8] (tx) {\textbf{5. Atomic Commit}\\Batch insert + \texttt{PRAGMA} FK \& integrity check};
+
+    \draw[arrow] (cli) -- (idem);
+    \draw[arrow] (idem) -- (synth);
+    \draw[arrow] (synth) -- (hash);
+    \draw[arrow] (hash) -- (tx);
+\end{tikzpicture}
+\caption{Five-stage execution workflow of the synthetic student data generator (\texttt{python/generate\_data.py}).}
+\label{fig:generator-workflow}
+\end{figure}
 
 \subsection{Architecture and Schema Compliance}
 The generator directly interfaces with SQLite using standard library modules (\texttt{sqlite3}, \texttt{hashlib}, \texttt{secrets}, \texttt{argparse}) without external pip dependencies. It enforces strict compliance with \texttt{db/schema.sql}:
@@ -65,7 +108,7 @@ The generator produces a 16-byte cryptographically secure random salt, computes 
 \subsection{Benchmarking and Scale Validation}
 The generator was benchmarked across various cohort sizes on a standard development machine (Table~\ref{tab:generator-benchmark}). Automated verification via \texttt{PRAGMA foreign\_key\_check} and \texttt{PRAGMA integrity\_check} confirmed zero violations across all runs.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{|r|r|r|r|}
@@ -95,7 +138,32 @@ checks, and the Swing panels (\texttt{BrowsePanel}, \texttt{StudentCoursesPanel}
 A request starts as \texttt{PENDING}. The administrator moves it to \texttt{APPROVED} or
 \texttt{REJECTED}. A student can drop a course, which sets \texttt{DROPPED} (the row is kept for history).
 Requesting the course again re-opens the old row, which respects the rule that a student cannot enroll in
-the same course twice (\texttt{UNIQUE (student\_id, course\_id)}).
+the same course twice (\texttt{UNIQUE (student\_id, course\_id)}). Figure~\ref{fig:enrollment-lifecycle} illustrates the complete enrollment state machine.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.4cm and 2.2cm,
+    state/.style={rectangle, rounded corners=5pt, draw=blue!70!black, thick, fill=blue!6, minimum width=2.6cm, minimum height=0.9cm, align=center, font=\footnotesize\bfseries},
+    edge_lbl/.style={font=\scriptsize, fill=white, inner sep=1.5pt},
+    arrow/.style={-{Stealth[length=2.4mm]}, thick, draw=gray!80!black}
+]
+    \node[state, fill=orange!12, draw=orange!75!black] (pending) {\texttt{PENDING}};
+    \node[state, right=2.8cm of pending, fill=green!12, draw=green!60!black] (approved) {\texttt{APPROVED}};
+    \node[state, below=1.3cm of pending, fill=red!10, draw=red!70!black] (rejected) {\texttt{REJECTED}};
+    \node[state, below=1.3cm of approved, fill=gray!15, draw=gray!70!black] (dropped) {\texttt{DROPPED}};
+
+    \draw[arrow] ([xshift=-1.6cm]pending.west) -- node[above, font=\scriptsize] {Student Enrolls} (pending.west);
+    \draw[arrow] (pending) -- node[above, edge_lbl] {Admin Approves /} node[below, edge_lbl] {CGPA Auto-Allocate} (approved);
+    \draw[arrow] (pending) -- node[left, edge_lbl] {Admin Rejects} (rejected);
+    \draw[arrow] (approved) -- node[right, edge_lbl] {Student Drops} (dropped);
+    \draw[arrow, bend left=22] (pending.south east) to node[pos=0.45, above right, edge_lbl] {Student Cancels} (dropped.north west);
+    \draw[arrow, bend left=32] (dropped.west) to node[below, edge_lbl] {Re-request (Reactivates Row)} (rejected.east);
+    \draw[arrow, bend left=25] (rejected.north west) to node[left, edge_lbl] {Re-enroll} (pending.south west);
+\end{tikzpicture}
+\caption{Enrollment state transition lifecycle enforcing \texttt{UNIQUE(student\_id, course\_id)}.}
+\label{fig:enrollment-lifecycle}
+\end{figure}
 
 \subsection{Rules enforced}
 \begin{itemize}
@@ -140,6 +208,6 @@ also draw a grade-average chart and a bell curve for one course.
 
 \subsection{Results}
 The module is covered by 22 JUnit tests (\texttt{EnrollmentServiceTest}, \texttt{CsvExporterTest} and
-\texttt{EnrollmentPeriodAndReportsTest}); the whole project passes 136 tests. The profiling results for
+\texttt{EnrollmentPeriodAndReportsTest}); the whole project passes 136 Java tests. The profiling results for
 the enrollment queries on a database of 10{,}006 students and 50{,}040 enrollments are given in the
 profiling section.
