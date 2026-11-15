@@ -1,0 +1,42 @@
+Profiling python/reports.py on a 10,000-student database
+
+== enrollment-counts (wall time)
+real	0m0.101s
+
+== enrollment-counts (cProfile, top 12 by cumulative time)
+         23542 function calls (23004 primitive calls) in 0.049 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     22/1    0.000    0.000    0.049    0.049 {built-in method builtins.exec}
+        1    0.000    0.000    0.049    0.049 reports.py:1(<module>)
+        1    0.000    0.000    0.036    0.036 reports.py:172(main)
+        1    0.000    0.000    0.031    0.031 reports.py:80(run_query)
+        1    0.031    0.031    0.031    0.031 {method 'execute' of 'sqlite3.Connection' objects}
+     40/6    0.000    0.000    0.015    0.003 <frozen importlib._bootstrap>:1349(_find_and_load)
+     40/6    0.000    0.000    0.015    0.002 <frozen importlib._bootstrap>:1304(_find_and_load_unlocked)
+     33/6    0.000    0.000    0.013    0.002 <frozen importlib._bootstrap>:911(_load_unlocked)
+     20/6    0.000    0.000    0.013    0.002 <frozen importlib._bootstrap_external>:989(exec_module)
+    78/12    0.000    0.000    0.011    0.001 <frozen importlib._bootstrap>:480(_call_with_frames_removed)
+
+== grade-averages (wall time)
+real	0m0.098s
+
+== grade-averages (cProfile, top 12 by cumulative time)
+         23134 function calls (22596 primitive calls) in 0.087 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     22/1    0.000    0.000    0.087    0.087 {built-in method builtins.exec}
+        1    0.000    0.000    0.087    0.087 reports.py:1(<module>)
+        1    0.000    0.000    0.068    0.068 reports.py:172(main)
+        1    0.000    0.000    0.062    0.062 reports.py:80(run_query)
+        1    0.061    0.061    0.061    0.061 {method 'execute' of 'sqlite3.Connection' objects}
+     40/6    0.000    0.000    0.022    0.004 <frozen importlib._bootstrap>:1349(_find_and_load)
+     40/6    0.000    0.000    0.022    0.004 <frozen importlib._bootstrap>:1304(_find_and_load_unlocked)
+     33/6    0.000    0.000    0.021    0.004 <frozen importlib._bootstrap>:911(_load_unlocked)
+     20/6    0.000    0.000    0.021    0.004 <frozen importlib._bootstrap_external>:989(exec_module)
+    78/12    0.000    0.000    0.018    0.002 <frozen importlib._bootstrap>:480(_call_with_frames_removed)
+
