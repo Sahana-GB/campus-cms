@@ -197,3 +197,11 @@ To reproduce the profiling results:
 ```bash
 bash scripts/profile.sh
 ```
+
+---
+
+## Members
+1. Sahana Bhagwat - CS25BT003
+2. V. Kavyanjali - MC25BT029
+3. Vanchanagiri Siri Valli - MC25BT021
+4. Avani Kasar - MC25BT027

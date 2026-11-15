@@ -66,3 +66,17 @@ python3 python/generate_data.py --count 10000 --seed 42
 python3 python/generate_enrollment_data.py
 bash scripts/profile.sh
 ```
+
+## Profiling the Python report tool (`python/reports.py`)
+- Tool: Python's built-in `cProfile`, plus `time`, on the 10,000-student database (one run per report).
+- Result: `enrollment-counts` took about 101 ms and `grade-averages` about 98 ms in total.
+- cProfile shows the SQL query (`sqlite3.Connection.execute`) is the largest cost: 31 ms of 49 ms
+  (about 63%) for `enrollment-counts` and 61 ms of 87 ms (about 70%) for `grade-averages`.
+  Most of the rest is Python start-up and importing modules. Building and printing the table
+  (`print_table`) is too small to appear among the top 12 entries (each at least 11 ms).
+- Conclusion: the bottleneck is the SQL, not the Python code, which agrees with the repeated
+  (30-run) measurements above. The grade-averages query still reads every published grade.
+- These are single runs, so the numbers vary a little between runs; the 30-run results above are the
+  more precise ones.
+- Raw output: `profiling/reports_py_profile.txt`.
+

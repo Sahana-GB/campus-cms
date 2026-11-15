@@ -140,3 +140,11 @@ Admin search: name prefix & 1.017 & 0.175 & 5.8$\times$ \\ \hline
     \item \textbf{Unimproved Queries:} The \emph{Grade Averages} report must aggregate all 70{,}301 published grade records to compute class averages; because all rows must be read, index lookups cannot bypass the data scan. Similarly, the \emph{All Pending} query returns thousands of records where execution time is dominated by result set construction and serialization rather than search. The name index only helps prefix searches; a search for text in the middle of a name cannot use an index.
     \item \textbf{Trade-off Assessment:} B-tree indexes introduce marginal overhead on \texttt{INSERT} and \texttt{UPDATE} operations and consume additional disk storage. Because academic course management systems are predominantly read-heavy (frequent course browsing, enrollment checks, and grade reviews compared to course creation), this trade-off is highly beneficial.
 \end{itemize}
+
+\subsection{Profiling the Python Report Tool}
+We also profiled \texttt{python/reports.py} with \texttt{cProfile} on the 10{,}006-student database
+(one run per report). For both reports, about 63--70\% of the profiled time was the SQLite query
+itself (\texttt{sqlite3.Connection.execute}); the rest was mostly Python start-up and module imports,
+and printing the table was too small to appear among the top entries. The SQL, and therefore its
+indexes, remains the right place to optimise. These are single runs, so the 30-run measurements in
+Table~\ref{tab:profiling-results} are the more precise ones.
